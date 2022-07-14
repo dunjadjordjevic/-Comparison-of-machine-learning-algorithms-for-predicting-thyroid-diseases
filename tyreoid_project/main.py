@@ -1,7 +1,10 @@
+import math
+
 import pandas as pd
 import numpy as np
 from imblearn.over_sampling import SMOTE
-
+from sklearn.model_selection import train_test_split
+from models import evaluator
 
 def clear_dataset(thyroidDataset):
 
@@ -102,6 +105,7 @@ def remap_target_data(thyroidDataset):
                  'H': 'hypothyroid'}
 
     thyroidDataset['target'] = thyroidDataset['target'].map(diagnoses)
+    thyroidDataset.dropna(subset=['target'], inplace=True) #remove all data that are not in those 3 classes
     thyroidDataset = thyroidDataset.replace({'negative': 0, 'hypothyroid': 1, 'hyperthyroid': 2})
 
     if thyroidDataset['target'].isnull().sum():
@@ -120,7 +124,7 @@ def add_more_data(thyroidDataset):
     print(thyroidDataset['target'].value_counts())
 
     # SMOTE - Synthetic Minority Over-sampling Technique - adding more entries
-    y = thyroidDataset['target']
+    y = thyroidDataset['target'].astype(str)
     X = thyroidDataset.drop(columns=['target'], axis=1)
     oversample = SMOTE()
     X_smoted, y_smoted = oversample.fit_resample(X, y)
@@ -129,7 +133,7 @@ def add_more_data(thyroidDataset):
     thyroidDataset = pd.concat([X_smoted, y_smoted], axis='columns')
     print('After implementing SMOTE: ')
     print(thyroidDataset['target'].value_counts())
-
+    return thyroidDataset
 
 #######################################################################################################################
 
@@ -144,7 +148,22 @@ clear_dataset(thyroidDataset)
 remap_target_data(thyroidDataset)
 
 # Some classes are more represented than others, so we need to add more entries in existing dataset
-add_more_data(thyroidDataset)
+thyroidDataset = add_more_data(thyroidDataset)
+thyroidDataset.to_csv('resources/result_dataset.csv')
+
+y = thyroidDataset['target']
+x = thyroidDataset.drop('target', axis=1)
+
+#20% test, 80% train
+x_train, x_test, y_train, y_test= train_test_split(x, y, test_size=0.2)
+
+number_of_records_in_training_set = len(x_train)
+number_of_records_in_test_set = len(x_test)
+
+evaluator = evaluator.Evaluator()
+evaluator.evaluate(pd.concat([x_train, y_train], axis='columns'))
+
+
 
 
 
