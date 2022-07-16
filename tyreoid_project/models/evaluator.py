@@ -1,9 +1,6 @@
 import math
 from random import randrange
-import numpy as np
-from scipy.spatial import distance
-from scipy.spatial.distance import pdist
-
+from tyreoid_project.models.decision_tree import *
 
 class Evaluator:
 
@@ -50,7 +47,7 @@ class Evaluator:
 
         return prediction_value
 
-    def k_nearest_neighbors(self, train_set, test_set, number_of_neighbors):
+    def k_nearest_neighbors(self, train_set, test_set, columns, number_of_neighbors):
 
          prediction_values = list()
          for entry in test_set:
@@ -87,7 +84,11 @@ class Evaluator:
 
         return folds
 
-    def evaluate_algorithm(self, dataset, algorithm, *args):
+    def decision_tree_algorithm_call(self, train_set, test_set, columns, min_sample, max_depth):
+
+        return classification_decision_tree(train_set, test_set, columns, min_sample, max_depth)
+
+    def evaluate_algorithm(self, dataset, columns, algorithm, *args):
 
         scores = list()
         folds = self.cross_validation_split(dataset)
@@ -104,35 +105,55 @@ class Evaluator:
                 entry_tmp[-1] = None #(?) should we do this one line before append?
 
             print('Calling algorithm for test fold with index: ', idx)
-            prediction_values = algorithm(train_folds, test_fold, *args)
+            prediction_values = algorithm(train_folds, test_fold, columns, *args)
             acutal_values = [entry[-1] for entry in fold]
             accuracy_metric = self.accuracy_metric(acutal_values, prediction_values)
             scores.append(accuracy_metric)
 
         return scores
 
-    def evaluate(self, dataset):
+    def evaluate(self, dataset, columns):
 
         # 1. KNN algorithm
         # TODO: Should iterrate over k from k_min to k_max, and find best mean of scores
         # for now we put value 10
-        print(" --> START of evaluation of KNN algorithm <-- \n")
+
 
         self.number_of_records_in_training_set = len(dataset)
         file = open('resources/k_indexes.txt', 'w')
 
         self.k_max = math.sqrt((self.number_of_records_in_training_set - self.fold_size) * 0.8)
-        
+
         if (self.k_max % 2) == 0:
             self.k_max = self.k_max + 1
 
+        '''
+        print(" --> START of evaluation of KNN algorithm <-- \n")
         for k_index in range(self.k_min, int(self.k_max)):
             print('K index is: ', k_index)
-            scores = self.evaluate_algorithm(dataset, self.k_nearest_neighbors, k_index)
+            scores = self.evaluate_algorithm(dataset, columns, self.k_nearest_neighbors, k_index)
             #print('Scores: %s' % scores)
             #print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
             #print(" --> END of evaluation of KNN algorithm <-- \n")
             file.write(str(sum(scores) / float(len(scores))))
 
         file.close()
+        
+        '''
+
+
+        # KNN algorithm, k = 10
+        #scores = self.evaluate_algorithm(dataset, self.k_nearest_neighbors, 10)
+
+        # Classification decision tree algorithm
+        min_samples = 2
+        max_depth = 5
+
+        print(" --> START of evaluation of classification decision tree algorithm <-- \n")
+        dataset['target'] = pd.to_numeric(dataset['target'])
+        scores = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, max_depth)
+        print('Scores: %s' % scores)
+        print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+        print(" --> END of evaluation of classification decision tree algorithm <-- \n")
+
 

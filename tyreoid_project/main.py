@@ -22,7 +22,8 @@ def clear_dataset(thyroidDataset):
         'T4U_measured',
         'FTI_measured',
         'TBG_measured',
-        'referral_source'],
+        'referral_source',
+        'patient_id'],
         axis=1, inplace=True)
 
     ############################### --> Missing data CHECK <-- #########################################################
@@ -52,7 +53,6 @@ def clear_dataset(thyroidDataset):
 
     print('Thyroid dataset null values by column after updating')
     print(thyroidDataset.isnull().sum())
-
 
     ######################################## --> MAX/MIN unexpected values check <-- ##################################
     # Checking max/min values for age column
@@ -86,6 +86,8 @@ def clear_dataset(thyroidDataset):
 
     print('Thyroid dataset cleaning END')
 
+    return thyroidDataset
+
 def remap_target_data(thyroidDataset):
 
     # Target column in thyroid dataset include Strings which represents exact diagnose with multiple
@@ -118,6 +120,8 @@ def remap_target_data(thyroidDataset):
 
     print('Remapping has been done on thyroid dataset!')
 
+    return thyroidDataset
+
 def add_more_data(thyroidDataset):
 
     print('Before implementing SMOTE: ')
@@ -139,17 +143,17 @@ def add_more_data(thyroidDataset):
 
 # Reading thyroid dataset from CSV
 thyroidDataset = pd.read_csv('resources/thyroidDF.csv')
+
 # print('Thyroid dataset information')
 thyroidDataset.info()
 columns = thyroidDataset.columns
 # print(columns)
 
-clear_dataset(thyroidDataset)
-remap_target_data(thyroidDataset)
+thyroidDataset = clear_dataset(thyroidDataset)
+thyroidDataset = remap_target_data(thyroidDataset)
 
 # Some classes are more represented than others, so we need to add more entries in existing dataset
 thyroidDataset = add_more_data(thyroidDataset)
-thyroidDataset.to_csv('resources/result_dataset.csv')
 
 y = thyroidDataset['target']
 x = thyroidDataset.drop('target', axis=1)
@@ -161,7 +165,7 @@ number_of_records_in_training_set = len(x_train)
 number_of_records_in_test_set = len(x_test)
 
 evaluator = evaluator.Evaluator()
-evaluator.evaluate(pd.concat([x_train, y_train], axis='columns'))
+evaluator.evaluate(pd.concat([x_train, y_train], axis='columns'), thyroidDataset.columns)
 
 
 
