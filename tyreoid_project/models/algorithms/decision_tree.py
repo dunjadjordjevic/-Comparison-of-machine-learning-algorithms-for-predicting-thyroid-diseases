@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 
 def check_purity(dataset):
 
@@ -23,25 +24,21 @@ def classify_data(dataset):
     return classification
 
 
-def get_potential_splits(dataset):
+def get_potential_splits(dataset, random_subspace):
 
     # dictionary where key is index of column, and value is list of potential splits
     potential_splits = {}
-
     _, number_of_columns = dataset.shape
-    for column_index in range(number_of_columns - 1):
-        # for each column we should create one entry in dictionary potential_splits
-        potential_splits[column_index] = []
-        # for each column we are storing values for that column in values variable
+    column_indexes = list(range(number_of_columns - 1))
+
+    # for random forest tree algorithm
+    if random_subspace and random_subspace <= len(column_indexes):
+        column_indexes = random.sample(column_indexes, random_subspace)
+
+    for column_index in column_indexes:
         values = dataset[:, column_index]
         unique_values = np.unique(values)
-
-        for index in range(len(unique_values)):
-            if index != 0:
-                current_value = unique_values[index]
-                previous_value = unique_values[index - 1]
-                potential_split = (current_value + previous_value) / 2
-                potential_splits[column_index].append(potential_split)
+        potential_splits[column_index] = unique_values
 
     return potential_splits
 
@@ -111,10 +108,12 @@ def determine_best_split(dataset, potential_splits):
     min_sample - finishing point, representing minimal number of elements in group for node which can 
     not be splited anymore (the greater the min_sample is, the lower number of layers tree will have :))
     max_depth - number of depth for tree, representing number of questions in dictionary
+    random_subspace - number of features which we want to use in random forest algorithm
+                      (default value is None for regular classification decision tree algorithm)
 '''
 
 
-def decision_tree_algorithm(df_copy, columns, counter=0, min_samples=2, max_depth=5):
+def decision_tree_algorithm(df_copy, columns, counter=0, min_samples=2, max_depth=5, random_subspace=None):
 
 
     # first call of function is when counter = 0
@@ -134,9 +133,13 @@ def decision_tree_algorithm(df_copy, columns, counter=0, min_samples=2, max_dept
     else:
         # recursive_part
         counter += 1
-        potential_splits = get_potential_splits(dataset)
+        potential_splits = get_potential_splits(dataset, random_subspace)
         split_column, split_value = determine_best_split(dataset, potential_splits)
         data_left, data_right = split_data(dataset, split_column, split_value)
+
+        if len(data_left) == 0 or len(data_right) == 0:
+            classification = classify_data(dataset)
+            return classification
 
         # instantiate sub-tree
         # create key as question
@@ -145,8 +148,8 @@ def decision_tree_algorithm(df_copy, columns, counter=0, min_samples=2, max_dept
         sub_tree = {question: []}
 
         # create value as list of answers
-        yes_answer = decision_tree_algorithm(data_left, columns, counter, min_samples, max_depth)
-        no_answer = decision_tree_algorithm(data_right, columns, counter, min_samples, max_depth)
+        yes_answer = decision_tree_algorithm(data_left, columns, counter, min_samples, max_depth, random_subspace)
+        no_answer = decision_tree_algorithm(data_right, columns, counter, min_samples, max_depth, random_subspace)
 
         if yes_answer == no_answer:
             sub_tree = yes_answer
@@ -176,7 +179,6 @@ def classify_entry(entry, tree):
         return answer
     else:
         return classify_entry(entry, answer)
-
 
 def classification_decision_tree(train_set, test_set, columns, min_samples=2, max_depth=5):
 
