@@ -28,7 +28,7 @@ def bootstrapping(train_df, number_of_data_in_bootstrap_dataset):
     boostrapped_dataset = train_df.iloc[bootstrap_entries_indexes]
     return boostrapped_dataset
 
-def random_forest_algorithm(train_df, columns, number_of_trees, number_of_data_in_bootstrap_dataset, number_of_features, max_depth):
+def random_forest_algorithm(train_df, columns, number_of_trees, number_of_data_in_bootstrap_dataset, number_of_features, max_depth, metric_function):
 
     # forest is array of trees
     forest = []
@@ -36,7 +36,7 @@ def random_forest_algorithm(train_df, columns, number_of_trees, number_of_data_i
 
     for i in range(number_of_trees):
         df_bootstrapped = bootstrapping(train_df, number_of_data_in_bootstrap_dataset)
-        tree = decision_tree_algorithm(df_bootstrapped, columns, max_depth=max_depth, random_subspace=number_of_features)
+        tree = decision_tree_algorithm(df_bootstrapped, columns, max_depth=max_depth, random_subspace=number_of_features, metric_function=metric_function)
         forest.append(tree)
 
     return forest
@@ -56,9 +56,9 @@ def random_forest_predictions(test_df, forest):
 
     return df_predictions.mode(axis=1)[0]
 
-def random_forest(train_set, test_set, columns, number_of_trees, number_of_data_in_bootstrap_dataset, number_of_features, max_depth):
+def random_forest(train_set, test_set, columns, number_of_trees, number_of_data_in_bootstrap_dataset, number_of_features, max_depth, metric_function):
 
-    forest = random_forest_algorithm(train_set, columns, number_of_trees, number_of_data_in_bootstrap_dataset, number_of_features, max_depth)
+    forest = random_forest_algorithm(train_set, columns, number_of_trees, number_of_data_in_bootstrap_dataset, number_of_features, max_depth, metric_function)
     test_set = pd.DataFrame(data=test_set, columns=columns)
     predictions = random_forest_predictions(test_set, forest)
     #accuracy = calculate_accuracy(predictions, test_set.target)
