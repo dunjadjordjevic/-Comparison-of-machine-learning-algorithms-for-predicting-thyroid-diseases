@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 from random import randrange
-from tyreoid_project.models.algorithms.decision_tree import *
-from tyreoid_project.models.algorithms.k_nearest_neighbours import *
-from tyreoid_project.models.algorithms.random_forest import *
-from tyreoid_project.models.algorithms.naive_bayes_classifier import *
+from thyroid_project.models.algorithms.decision_tree import *
+from thyroid_project.models.algorithms.k_nearest_neighbours import *
+from thyroid_project.models.algorithms.random_forest import *
+from thyroid_project.models.algorithms.naive_bayes_classifier import *
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 
@@ -155,12 +155,12 @@ class Evaluator:
         recall = recall_score(actual_values, prediction_values, average='macro')
         f1score = f1_score(actual_values, prediction_values, average='macro')
         print('Mean Accuracy for prediction is : %.3f%%' % accuracy_metric)
-        print('Precision for prediction is : %.3f%%' % precision)
-        print('Recall for prediction is : %.3f%%' % recall)
-        print('F1 score for prediction is : %.3f%%' % f1score)
+        print('Precision for prediction is : %.3f%%' % (precision*100))
+        print('Recall for prediction is : %.3f%%' % (recall*100))
+        print('F1 score for prediction is : %.3f%%' % (f1score*100))
         print('--> End of prediction on test set <--')
 
-        return prediction_values
+        return prediction_values, accuracy_metric, precision, recall, f1score
 
     def evaluate(self, dataset, columns):
 
@@ -188,7 +188,7 @@ class Evaluator:
 
         print(" --> START of evaluation of KNN algorithm <-- \n")
         #for k_index in range(self.k_min, int(self.k_max), 10):
-        for k_index in range(self.k_min, 130, 10):
+        for k_index in range(self.k_min, 130, 3):
             if (k_index % 2) == 0:
                 continue
 
@@ -235,7 +235,6 @@ class Evaluator:
         print_metrics(scores, precision, recall, f1score)
         print(" --> END of evaluation of classification decision tree algorithm <-- \n")
         '''
-
 
         '''
         # Calculation of the best max_depth parameter for classification decision tree

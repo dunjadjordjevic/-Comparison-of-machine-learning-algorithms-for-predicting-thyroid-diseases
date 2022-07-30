@@ -1,5 +1,5 @@
 import pandas as pd
-from tyreoid_project.models.algorithms.decision_tree import classify_entry
+from thyroid_project.models.algorithms.decision_tree import classify_entry
 
 def make_predictions(df, tree):
 

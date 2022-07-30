@@ -205,7 +205,7 @@ def classification_decision_tree(train_set, test_set, columns, min_samples=2, ma
     print('Tree before post-pruning:\n')
     print(tree)
     print('Tree after post-pruning:\n')
-    from tyreoid_project.models.post_pruning import post_pruning
+    from thyroid_project.models.post_pruning import post_pruning
     tree_pruned = post_pruning(tree, train_set, test_set, columns)
     print(tree_pruned)
 

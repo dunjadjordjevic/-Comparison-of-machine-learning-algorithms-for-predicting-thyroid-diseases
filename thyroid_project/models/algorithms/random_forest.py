@@ -2,7 +2,7 @@ import random
 import numpy as np
 import pandas as pd
 
-from tyreoid_project.models.algorithms.decision_tree import decision_tree_algorithm, classify_entry
+from thyroid_project.models.algorithms.decision_tree import decision_tree_algorithm, classify_entry
 
 '''
     Create predictions for all entries in dataset

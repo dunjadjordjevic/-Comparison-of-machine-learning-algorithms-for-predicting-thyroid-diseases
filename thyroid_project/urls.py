@@ -1,4 +1,4 @@
-"""tyreoid_project URL Configuration
+"""thyroid_project URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.2/topics/http/urls/
@@ -18,5 +18,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('tyreoid_webapp/', include('tyreoid_webapp.urls'))
+    path('thyroid_webapp/', include('thyroid_webapp.urls'))
 ]
