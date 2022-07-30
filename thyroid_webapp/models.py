@@ -1,3 +1,8 @@
 from django.db import models
+from django import forms
 
-# Create your models here.
+class ModelFormWithFileField(forms.Form):
+
+    datasetTestFile = models.TextField()
+    nameOfAlgorithm = models.TextField()
+

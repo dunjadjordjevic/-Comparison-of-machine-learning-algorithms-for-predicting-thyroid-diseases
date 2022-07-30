@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}"/>
+
+    <title> Thyroid disease prediction app </title>
+</head>
+<body>
+
+    <p class="navbar navbar-default navbar-fixed-top bg-dark text-white">
+        <br>
+    </p>
+
+    <div class="container">
+        <ul class="nav nav-tabs bg-light" id="tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active text-dark" id="algorithms-tab" data-toggle="tab" href="#algorithms" role="tab" aria-controls="algorithms" aria-selected="true">Algoritmi mašinskog učenja</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" id="training-results-tab" data-toggle="tab" href="#training_results" role="tab" aria-controls="training_results" aria-selected="false">Rezultati obučavanja</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" id="testing-results-tab" data-toggle="tab" href="#testing_results" role="tab" aria-controls="testing_results" aria-selected="false">Rezultati testiranja</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" id="predict-page-tab" data-toggle="tab" href="#predict_page" role="tab" aria-controls="predict_page" aria-selected="false">Prediktuj nove vrednosti</a>
+            </li>
+        </ul>
+        <div class="tab-content fill" id="tabsContent">
+
+            <!--
+             Algorithms tab
+             Show information about used algorithms
+            -->
+            <div class="tab-pane fade show active bg-light fill" id="algorithms" role="tabpanel" aria-labelledby="algorithms-tab">
+
+                <div id="carouselForAlgorithmInfo" class="carousel slide fill" data-ride="carousel">
+                  <div class="carousel-inner fill bg-light">
+                    <div class="carousel-item fill active">
+
+                        <div class="fill algorithm-info-container bg-light justify-content-center text-center">
+
+                            <h5> Algoritam K najbližih suseda </h5>
+                            <i> - K nearest neighbours algorithm - </i>
+
+                            <br><br>
+                            U prepoznavanju obrazaca, k-najbližih suseda (ili skraćeno k-NN) predstavlja neparametarski metod koji se koristi za klasifikaciju i regresiju.[1] U oba slučaja, ulaz se sastoji od k najbližih test primera u funkciji prostora. Izlaz zavisi od toga da li se k-NN koristio za klasifikaciju ili regresiju:
+
+                            U k-NN klasifikaciji, izlaz je član klase. Objekat se klasifikuje glasovima većine svojih suseda, tako da objekat bude raspoređen u klasu najčešću među svojim k najbližim susedima (k je pozitivan ceo broj, najčešće mali broj). Ako je k = 1, onda se objekat jednostavno dodeljuje klasi tog jednog najbližeg suseda.
+                            U k-NN regresiji, izlaz predstavlja vrednost objekta. Ova vrednost predstavlja prosek vrednosti njegovih k najbližih suseda.
+                            k-NN je tip učenja koje se zasniva na primerima, ili tzv. lenjo učenje, gde je aproksimacija funkcije lokalna i sva izračunavanja odlažu do klasifikacije. The k-NN algoritam je najjednostavniji od svih algoritama mašinskog učenja.
+                            <br> <br> <br> <br>
+
+                            {% load static %}
+                            <img src="{% static 'images/info/knn_algorithm.png' %}" alt="K nearest neighbours algorithm info image" class="img-thumbnail rounded float-center w-50">
+                            <br>
+                            <i> Određivanje pripadnosti klasi instance prema susedskim klasama </i>
+                            <br><br><br>
+
+                             <div class="justify-content-center about-parameters float-center">
+                                <p class="font-weight-bold">Na tačnost predviđanja utiču parametari <br> kao što su:</p>
+                                <ul class="text-left">
+                                  <li> k - broj najbližih suseda čije se predikcije posmatraju </li>
+                                  <li> način računanja distance između dva suseda na osnovu njihovih karakteristika (Euklidska distanca, Menhetn distanca, Minkowski distanca)</li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="carousel-item fill">
+                        <div class="fill algorithm-info-container bg-light justify-content-center text-center">
+
+                            <h5> Algoritam stabla odlučivanja </h5>
+                            <i> - Decision tree algorithm -  </i>
+
+                            <br><br>
+                            Stabla odlučivanja predstavljaju jedan od oblika nadgledanog učenja, a najčešće se koriste kod problema klasifikacije.
+                            Stablo odlučivanja je dijagram nalik strukturi u kojoj je svaki unutrašnji čvor predstavlja čvor odluke, a svaki spoljašnji čvor predstavlja čvor predikcije.
+                            Putanje od korena do lista predstavljaju pravila klasifikacije.
+                            Postoje klasifikaciona stabla, kod kojih je izlazna promenljiva kategoričkog tipa i regresivna stabla, kod kojih je izlazna promenljiva kontinualnog tipa.
+                            <br> <br> <br> <br>
+
+                            {% load static %}
+                            <img src="{% static 'images/info/decision_tree_algorithm.png' %}" alt="DT algorithm info image" class="img-thumbnail rounded float-center w-50">
+                            <br>
+                            <i> Određivanje pripadnosti klasi instance pomoću klasifikacionog stabla odlučivanja </i>
+                            <br><br><br>
+
+                            <div class="justify-content-center about-parameters float-center">
+                                <p class="font-weight-bold">Na tačnost predviđanja stabla najviše utiču parametri <br> pomoću kojih se formira stablo odlučivanja, kao što su:</p>
+                                <ul class="text-left">
+                                  <li>maksimalna dubina stabla</li>
+                                  <li>minimalni broj podataka u okviru čvora</li>
+                                  <li>metod na osnovu koga se vrši račvanje čvorova (Gini indeks, Entropija)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="fill algorithm-info-container bg-light justify-content-center text-center">
+
+                            <h5> Algoritam slučajnih šuma </h5>
+                            <i> - Random forest algorithm -  </i>
+
+                            <br><br>
+                            Algoritam slučajnih šuma predstavlja algoritam nadgledanog učenja, koji upravlja ulaznim atributima i koristi klasifikatore zasnovane na stablima odlučivanja u osnovi.
+                            Prilikom kreiranja svakog zasebnog stabla odlučivanja se ne koriste svi atributi, a ni svi ulazni podaci skupa podataka za obučavanje.
+                            Korišćenjem većeg broja klasifikacionih stabala postiže se poboljšanje tačnosti klasifikacije, a predikcija se vrši na osnovu kombinovanja prediktovanih vrednosti
+                            pomenutih klasifikatora. Ovaj algoritam može se koristiti i kod regresivnih problema.
+                            Prednost ovog algoritma se ogleda u paralelnoj klasifikaciji, te je ovaj algoritam dosta brži od pomenutog algoritma K najbližih suseda.
+                            <br> <br> <br> <br>
+
+                            {% load static %}
+                            <img src="{% static 'images/info/random_forest_algorithm.png' %}" alt="RF algorithm info image" class="img-thumbnail rounded float-center w-50">
+                            <br>
+                            <i> Određivanje pripadnosti klasi instance pomoću algoritma slučajnih šuma </i>
+                            <br><br><br>
+
+                            <div class="justify-content-center about-parameters float-center">
+                                <p class="font-weight-bold">Na tačnost predviđanja slučajnih šuma najviše utiču parametri <br> pomoću kojih se formira šuma stabala, kao što su:</p>
+                                <ul class="text-left">
+                                  <li> maksimalna dubina stabla </li>
+                                  <li> minimalni broj podataka u okviru čvora </li>
+                                  <li> metod na osnovu koga se vrši račvanje čvorova (Gini indeks, Entropija) </li>
+                                  <li> broj stabala u slučajnoj šumi </li>
+                                  <li> broj podataka u bootstrap skupu </li>
+                                  <li> broj atributa izabranih prilikom procesa kreiranja slučajne šume </li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                      <div class="carousel-item">
+                        <div class="fill algorithm-info-container bg-light justify-content-center text-center">
+
+                            <h5> Naivni Bajesov klasifikator </h5>
+                            <i> - Naive Bayes classifier -  </i>
+
+                            <br><br>
+                            Naivni Bajesov klasifikator predstavlja algoritam nadgledanog učenja koji donosi klasifikacionu odluku na osnovu klase koja je za njega najverovatnija, odnosno koja ima najveću aposteriornu verovatnoću.
+                            Ovim klasifikatorom se uvode pretpostavke da su svi atributi podjednako važni, kao i da su oni međusobno nezavisni - vrednost jednog atributa ne govori ništa o vrednosti drugog atributa.
+                            Ukoliko su atributi numeričke vrednosti, primenljuje se raspodela verovatnoća atributa za procenu verovatnoće atributa u skupu podataka.
+                            <br> <br> <br> <br>
+
+                            {% load static %}
+                            <img src="{% static 'images/info/naive_bayes_algorithm.png' %}" alt="Naive Bayes algorithm info image" class="img-thumbnail rounded float-center w-50">
+                            <br>
+                            <i> Određivanje pripadnosti klasi instance pomoću Naivnog Bajesovog klasifikatora </i>
+                            <br><br><br>
+
+                            Ovaj klasifikator ne koristi dodatne parametre u procesu klasifikacije.
+                        </div>
+                    </div>
+                  </div>
+                  <a class="carousel-control-prev " href="#carouselForAlgorithmInfo" role="button" data-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Previous</span>
+                  </a>
+                  <a class="carousel-control-next" href="#carouselForAlgorithmInfo" role="button" data-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Next</span>
+                  </a>
+                </div>
+
+            </div>
+
+            <!--
+             Training results tab
+             Show training results for used thyroid dataset with parameters which were used in training process
+             -->
+            <div class="tab-pane fill bg-light" id="training_results" role="tabpanel" aria-labelledby="training-results-tab">
+
+                <div class="container fill bg-light metrics-table">
+                    <br>
+                    <br>
+                    <br>
+                    <table class="metrics-table table text-center">
+                      <thead>
+                            <tr>
+                                <th scope="col"> Metrike algoritama mašinskog učenja </th>
+                                <th scope="col"> K najbližih suseda </th>
+                                <th scope="col"> Stabla odlučivanja </th>
+                                <th scope="col"> Slučajna šuma </th>
+                                <th scope="col"> Naivni Bajesov klasifikator </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th scope="row"> Tačnost <br> [<i>Accuracy</i>] </th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"> Prezinost <br> [<i>Precision</i>] </th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"> Recall metrika <br> [<i>Recall</i>] </th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"> F1 metrika <br> [<i>F1 score</i>] </th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                      </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!--
+             Test results tab
+             Show test results for used thyroid dataset
+            -->
+            <div class="tab-pane fade fill bg-light" id="testing_results" role="tabpanel" aria-labelledby="testing-results-tab">
+
+            </div>
+
+            <!--
+             Predict tab
+             Predict with new dataset imported from CSV
+            -->
+            <div class="tab-pane fade fill bg-light" id="predict_page" role="tabpanel" aria-labelledby="predict-page-tab">
+                <br><br><br><br>
+                <div class="card text-white border-dark m-5">
+                    <div class="card-header text-dark">
+                        Predikcija oboljenja nad novim skupom podataka za pacijente
+                    </div>
+                    <div class="card-body text-dark d-flex justify-content-center">
+                        <blockquote class="blockquote mb-0">
+                          <p> CSV fajl treba da sadrži iste kolone kao i početni skup podataka nad kojim je izvršeno obučavanje </p>
+
+                            <form action="see_prediction_results" method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="text" name="nameOfAlgorithm" id="formNameOfAlgorithm" style="width:300px; margin-left:30%"/>
+                                <br>
+                                <input type="file" name="datasetTestFile" id="formFileMultiple" style="width:300px; margin-left:30%"/>
+                                <br>
+                                <button type="submit" id="predict-button" class="btn btn-outline-dark" style="margin-left:42%" type="submit">
+                                    Prediktuj
+                                </button>
+                            </form>
+                            <br><br><br>
+                          <footer class="blockquote-footer text-dark">
+                              <i> Učitajte CSV fajl kako biste omogućili predikciju </i>
+                          </footer>
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</body>
+</html>

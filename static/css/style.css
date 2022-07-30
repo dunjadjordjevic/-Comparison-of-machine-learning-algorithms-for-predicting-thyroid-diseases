@@ -1,0 +1,37 @@
+ul.nav li.nav-item a.active {
+    background-color:grey;
+    color: white ! important;
+}
+
+html, body {
+  height: 100%;
+}
+
+.fill {
+    min-height: 100% !important;
+}
+
+.algorithm-info-container {
+    margin: 5% 5%  5%  5%;
+}
+
+.carousel-control-next,
+.carousel-control-prev /*, .carousel-indicators */ {
+    filter: invert(100%);
+}
+
+.about-parameters {
+    padding-left: 25%:
+    padding-right: 25%;
+}
+
+.metrics-table {
+    margin: 5% 5%  5%  5% ! important ;
+    width: 50%;
+}
+
+.container { height: 100%; }
+
+#predict_page {
+    height: 1000px;
+}
