@@ -121,11 +121,11 @@ class Evaluator:
             prediction_values = [int(x) for x in prediction_values]
             actual_values = [entry[-1] for entry in fold]
             actual_values = [int(x) for x in actual_values]
-            accuracy_metric = self.accuracy_metric(actual_values, prediction_values)
-            scores.append(accuracy_metric)
-            precision.append(precision_score(actual_values, prediction_values, average='macro'))
-            recall.append(recall_score(actual_values, prediction_values, average='macro'))
-            f1score.append(f1_score(actual_values, prediction_values, average='macro'))
+            accuracy_metric = accuracy_score(actual_values, prediction_values)
+            scores.append(accuracy_metric*100)
+            precision.append(precision_score(actual_values, prediction_values, average='weighted')*100)
+            recall.append(recall_score(actual_values, prediction_values, average='weighted')*100)
+            f1score.append(f1_score(actual_values, prediction_values, average='weighted')*100)
 
         print(scores)
         return scores, precision, recall, f1score
@@ -150,24 +150,27 @@ class Evaluator:
         prediction_values = [int(x) for x in prediction_values]
         actual_values = [entry[-1] for entry in test_set]
         actual_values = [int(x) for x in actual_values]
-        accuracy_metric = self.accuracy_metric(actual_values, prediction_values)
-        precision = precision_score(actual_values, prediction_values, average='macro')
-        recall = recall_score(actual_values, prediction_values, average='macro')
-        f1score = f1_score(actual_values, prediction_values, average='macro')
+        accuracy_metric = accuracy_score(actual_values, prediction_values) * 100
+        precision = precision_score(actual_values, prediction_values, average='weighted') * 100
+        recall = recall_score(actual_values, prediction_values, average='weighted') * 100
+        f1score = f1_score(actual_values, prediction_values, average='weighted') * 100
         print('Mean Accuracy for prediction is : %.3f%%' % accuracy_metric)
-        print('Precision for prediction is : %.3f%%' % (precision*100))
-        print('Recall for prediction is : %.3f%%' % (recall*100))
-        print('F1 score for prediction is : %.3f%%' % (f1score*100))
+        print('Precision for prediction is : %.3f%%' % precision)
+        print('Recall for prediction is : %.3f%%' % recall)
+        print('F1 score for prediction is : %.3f%%' % f1score)
         print('--> End of prediction on test set <--')
 
         return prediction_values, accuracy_metric, precision, recall, f1score
 
     def evaluate(self, dataset, columns):
 
+        '''
         # 1. KNN algorithm
-        # TODO: Check what are the best parameters for this algorithm
+        # Check what are the best parameters for this algorithm
         # Should iterrate over k from k_min to k_max, and find best mean of scores
-
+        precision_values = list()
+        recall_values = list()
+        f1score_values = list()
 
         self.number_of_records_in_training_set = len(dataset)
 
@@ -184,11 +187,11 @@ class Evaluator:
         x_train = dataset.drop('target', axis=1)
 
         w = self.regularization_coeffients(x_train, y_train.values)
-        f = open("resources/k_values.txt", "w")
+        f = open("thyroid_project/resources/k_values.txt", "w")
 
         print(" --> START of evaluation of KNN algorithm <-- \n")
-        #for k_index in range(self.k_min, int(self.k_max), 10):
-        for k_index in range(self.k_min, 130, 3):
+
+        for k_index in range(self.k_min, 131, 2):
             if (k_index % 2) == 0:
                 continue
 
@@ -198,27 +201,60 @@ class Evaluator:
             scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, k_index, w)
             print_metrics(scores, precision, recall, f1score)
             accuracy_values.append((sum(scores) / float(len(scores))))
+            precision_values.append((sum(precision) / float(len(precision))))
+            recall_values.append((sum(recall) / float(len(recall))))
+            f1score_values.append((sum(f1score) / float(len(f1score))))
             f.write("accuracy: " + str((sum(scores) / float(len(scores)))))
             f.write("\n")
             print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
             print(" --> END of evaluation of KNN algorithm <-- \n")
 
         plt.plot(k_values, accuracy_values, label="Dependency of K and accuracy in KNN algorithm")
+        plt.title("Dependency of K and accuracy in KNN algorithm")
         plt.xlabel("Number of neighbours")
         plt.ylabel("Accuracy metric")
-        plt.show()
+        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_accuracy.png')
+        #plt.show()
+        plt.clf()
+        plt.cla()
+
+        plt.plot(k_values, precision_values, label="Dependency of K and precision in KNN algorithm")
+        plt.title("Dependency of K and precision in KNN algorithm")
+        plt.xlabel("Number of neighbours")
+        plt.ylabel("Precision metric")
+        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_precision.png')
+        plt.clf()
+        plt.cla()
+
+        plt.plot(k_values, recall_values, label="Dependency of K and recall in KNN algorithm")
+        plt.title("Dependency of K and recall in KNN algorithm")
+        plt.xlabel("Number of neighbours")
+        plt.ylabel("Recall metric")
+        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_recall.png')
+        plt.clf()
+        plt.cla()
+
+        plt.plot(k_values, f1score_values, label="Dependency of K and F1 score in KNN algorithm")
+        plt.title("Dependency of K and F1 score in KNN algorithm")
+        plt.xlabel("Number of neighbours")
+        plt.ylabel("F1 score metric")
+        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_f1score.png')
+        plt.clf()
+        plt.cla()
+
         f.close()
 
+        '''
 
         '''
-        # KNN algorithm, k = 110
+        # KNN algorithm, k = 109
 
         y_train = dataset['target'].astype(int)
         x_train = dataset.drop('target', axis=1)
         w = self.regularization_coeffients(x_train, y_train.values)
 
         print(" --> START of evaluation of KNN algorithm <-- \n")
-        scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, 110, w)
+        scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, 109, w)
         print_metrics(scores, precision, recall, f1score)
         print(" --> END of evaluation of KNN algorithm <-- \n")
         '''
@@ -271,12 +307,14 @@ class Evaluator:
         plt.plot(max_depth_values, accuracy_entropy)
         plt.xlabel("Maximum depth of a tree")
         plt.ylabel("Accuracy metric")
-        plt.show()
+        plt.savefig('resources/generated_images/training_evaluation_images/dt_max_depth_accuracy.png')
+        #plt.show()
+        plt.clf()
+        plt.cla()
 
         '''
         '''
         # Classification random forest algorithm
-        # TODO: Check how many decision trees to use for this algorithm
 
         number_of_trees = 50
         number_of_data_in_bootstrap_dataset = 400
@@ -296,7 +334,6 @@ class Evaluator:
                                          metric_function)
         print_metrics(scores, precision, recall, f1score)
         print(" --> END of evaluation of random forest algorithm <-- \n")
-
         '''
 
         '''
