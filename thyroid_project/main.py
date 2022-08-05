@@ -2,12 +2,15 @@ import pandas as pd
 import seaborn as sns
 from random import randint
 from imblearn.over_sampling import SMOTE
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.linear_model import LassoCV
 from sklearn.model_selection import train_test_split
+
+import matplotlib
+import thyroid_project
 from thyroid_project.models.evaluator import *
 from sklearn.metrics import confusion_matrix
 from thyroid_project.models.post_pruning import *
-from models import evaluator
 
 def clear_dataset(thyroidDataset, columns):
 
@@ -175,7 +178,7 @@ def generate_testing_random_datasets(thyroidDataset):
 
     for i in range(1, 10, 1):
         newDataset = thyroidDataset.sample(n=randint(100, numberOfEntriesInInitialDataset), random_state=1)
-        newDataset.to_csv('resources/generated_datasets/test_dataset_' + str(i) + '.csv')
+        newDataset.to_csv('thyroid_project/resources/generated_datasets/test_dataset_' + str(i) + '.csv')
         listOfDatasets.append(newDataset)
 
     return listOfDatasets
@@ -193,8 +196,10 @@ def analyze_dataset(dataset, x_train, y_train, x_test, y_test):
     cor = dataset.corr()
     sns.heatmap(cor, annot=True, cmap=plt.cm.Reds)
     plt.title("Correlation matrix for thyroid dataset")
-    plt.savefig('resources/generated_images/thyroid_ds_attribute_correlation_matrix.png')
-    plt.show()
+    plt.savefig('thyroid_project/resources/generated_images/thyroid_ds_attribute_correlation_matrix.png')
+    #plt.show()
+    plt.clf()
+    plt.cla()
 
     # Checking importance of each feature in DS
     reg = LassoCV()
@@ -209,21 +214,22 @@ def analyze_dataset(dataset, x_train, y_train, x_test, y_test):
     matplotlib.rcParams['figure.figsize'] = (8.0, 10.0)
     imp_coef.plot(kind="barh")
     plt.title("Feature importance using Lasso Model")
-    plt.savefig('resources/generated_images/thyroid_ds_attribute_importance.png')
-    plt.show()
+    plt.savefig('thyroid_project/resources/generated_images/thyroid_ds_attribute_importance.png')
+    #plt.show()
+    plt.clf()
+    plt.cla()
 
 
 def upload_CSV_file(nameOfFile):
 
     if (nameOfFile == 'thyroidDF'):
-        dataset = pd.read_csv('resources/' + nameOfFile + '.csv')
+        dataset = pd.read_csv('thyroid_project/resources/' + nameOfFile + '.csv')
     else:
-        dataset = pd.read_csv('resources/generated_datasets/' + nameOfFile + '.csv')
+        dataset = pd.read_csv('thyroid_project/resources/generated_datasets/' + nameOfFile + '.csv')
 
     columns = dataset.columns
     listOfDatasets = list()
 
-    # TODO: Possibly needs to be updated when it is integrated to BE logic for Django app
     if (nameOfFile == 'thyroidDF'):
 
         #Evaluation/Prediction for starting dataset
@@ -233,14 +239,11 @@ def upload_CSV_file(nameOfFile):
         # Some classes are more represented than others, so we need to add more entries in existing dataset
         dataset = add_more_data(dataset)
 
-        # Generate list of 10 testing CSV files, where every CSV file contains dataframe with 22 columns and random number
-        # of rows from 100 to number of entries in thyroidDataset (19428) with randomly entries get from that dataset
-        listOfDatasets = generate_testing_random_datasets(dataset)
-
     return dataset, columns, listOfDatasets
 
 
-def remove_dominant_attributes(train_dataset):
+def remove_dominant_attributes(train_dataset, columns):
+
     helper = train_dataset
     modes = helper.mode()
 
@@ -252,22 +255,33 @@ def remove_dominant_attributes(train_dataset):
             dominant_attributes.append(columns[index])
 
     print('Dominant attributes will be removed from dataset')
-    print('Number of columns AFTER deletition of dominant attributes is:', helper.shape[1])
 
     return dominant_attributes
 
-def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm):
+def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForDataset=None, x_train=None, y_train=None, x_test=None, y_test=None):
 
+    evaluator1 = thyroid_project.models.evaluator.Evaluator()
     datasetWithPrediction = None
     accuracy = None
     accuracy_metric, precision, recall, f1score = None, None, None, None
-    dataset, columns, listOfDatasets = upload_CSV_file(nameOfFileForDataset)
 
-    y = dataset['target']
-    x = dataset.drop('target', axis=1)
+    dataset, columns, listOfDatasets = upload_CSV_file(nameOfFileForDataset)
+    dataset = dataset.loc[:, ~dataset.columns.str.contains('^Unnamed')]
+    if 'Unnamed: 0' in columns:
+        columns = columns.drop(['Unnamed: 0'])
+
+    #in case thyroid_dataset
+    if (columnsForDataset is not None):
+        columns = columnsForDataset
+
+    #in case not thyroid_dataset
+    if (x_test is None and y_test is None):
+        y_test = dataset['target']
+        x_test = dataset.drop('target', axis=1)
+
 
     # Split data in two groups: 20% test, 80% train with shuffle method
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=True)
+    #x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=True)
 
     if (nameOfFileForDataset == 'thyroidDF'):
         analyze_dataset(dataset, x_train, y_train, x_test, y_test)
@@ -276,7 +290,7 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm):
     number_of_records_in_test_set = len(x_test)
 
     # Putting parameter values for ML algorithms set by training process
-    NUMBER_OF_NEIGHBOURS_PREDICTED = 110
+    NUMBER_OF_NEIGHBOURS_PREDICTED = 109
     MIN_SAMPLE_PREDICTED = 2
     MAX_DEPTH_PREDICTED = 5
     CALCULATE_METRIC = calculate_entropy
@@ -284,16 +298,15 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm):
     NUMBER_OF_DATA_IN_BOOTSTRAP_DATASET = 400
     NUMBER_OF_FEATURES = 800
 
-    # TODO: Add fore other algorithms code
     print('Prediction for algorithm: ', nameOfAlgorithm)
     if(nameOfAlgorithm == 'k_nearest_neighbours'):
 
         # Predict with KNN algorithm
         tmp = pd.concat([x_train, y_train], axis='columns')
         y_train_tmp = tmp['target'].astype(int)
-        w = Evaluator.regularization_coeffients(self=evaluator, X=x_train, target=y_train_tmp.values)
+        w = Evaluator.regularization_coeffients(self=evaluator1, X=x_train, target=y_train_tmp.values)
 
-        predictions, accuracy_metric, precision, recall, f1score = evaluator.predict_algorithm(
+        predictions, accuracy_metric, precision, recall, f1score = evaluator1.predict_algorithm(
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
@@ -311,13 +324,15 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm):
         knn_ax.set_ylabel('Actual Values ')
         knn_ax.xaxis.set_ticklabels(['0', '1', '2'])
         knn_ax.yaxis.set_ticklabels(['0', '1', '2'])
-        plt.savefig('resources/generated_images/confusion_matrix.png')
-        plt.show()
+        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png')
+        #plt.show()
+        plt.clf()
+        plt.cla()
 
     elif (nameOfAlgorithm == 'decision_tree_algorithm'):
 
         # Predict with Decision tree algorithm
-        predictions, accuracy_metric, precision, recall, f1score = evaluator.predict_algorithm(
+        predictions, accuracy_metric, precision, recall, f1score = evaluator1.predict_algorithm(
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
@@ -336,8 +351,10 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm):
         dt_ax.set_ylabel('Actual Values ')
         dt_ax.xaxis.set_ticklabels(['0', '1', '2'])
         dt_ax.yaxis.set_ticklabels(['0', '1', '2'])
-        plt.savefig('resources/generated_images/confusion_matrix.png')
-        plt.show()
+        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png')
+        #plt.show()
+        plt.clf()
+        plt.cla()
 
 
     elif (nameOfAlgorithm == 'random_forest_algorithm'):
@@ -345,7 +362,7 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm):
         MAX_DEPTH_PREDICTED = 12
 
         # Predict with Random forest algorithm
-        predictions, accuracy_metric, precision, recall, f1score = evaluator.predict_algorithm(
+        predictions, accuracy_metric, precision, recall, f1score = evaluator1.predict_algorithm(
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
@@ -366,13 +383,15 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm):
         rf_ax.set_ylabel('Actual Values ')
         rf_ax.xaxis.set_ticklabels(['0', '1', '2'])
         rf_ax.yaxis.set_ticklabels(['0', '1', '2'])
-        plt.savefig('resources/generated_images/confusion_matrix.png')
-        plt.show()
+        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png')
+        #plt.show()
+        plt.clf()
+        plt.cla()
 
     elif (nameOfAlgorithm == 'naive_bayes_classifier_algorithm'):
 
         # Predict with Naive Bayes classifier algorithm
-        predictions, accuracy_metric, precision, recall, f1score = evaluator.predict_algorithm(
+        predictions, accuracy_metric, precision, recall, f1score = evaluator1.predict_algorithm(
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
@@ -388,97 +407,147 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm):
         nbc_ax.set_ylabel('Actual Values ')
         nbc_ax.xaxis.set_ticklabels(['0', '1', '2'])
         nbc_ax.yaxis.set_ticklabels(['0', '1', '2'])
-        plt.savefig('resources/generated_images/confusion_matrix.png')
-        plt.show()
+        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png')
+        #plt.show()
+        plt.clf()
+        plt.cla()
 
     datasetWithPrediction = x_test
     datasetWithPrediction = datasetWithPrediction.assign(predicted_values=predictions)
     datasetWithPrediction = datasetWithPrediction.assign(actual_values=y_test)
-    datasetWithPrediction.to_csv('resources/generated_prediction_datasets/prediction_dataset.csv')
+    datasetWithPrediction.to_csv('thyroid_project/resources/generated_prediction_datasets/prediction_dataset.csv')
 
     return datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score
 
 ########################################################################################################################
 ######################################################  EVALUATION  ####################################################
 
-# Reading thyroid dataset from CSV
-thyroidDataset = pd.read_csv('resources/thyroidDF.csv')
+def prepareThyroidDataset():
 
-columns = thyroidDataset.columns
+    thyroidDataset, columns, listOfDatasets = upload_CSV_file('thyroidDF')
 
-thyroidDataset, columns = clear_dataset(thyroidDataset, columns)
-thyroidDataset = remap_target_data(thyroidDataset)
+    '''
+    # Correlation matrix for get information about weak, positive, negative correlations in DS for features
+    plt.figure(figsize=(18, 16))
+    cor = thyroidDataset.corr()
+    print(cor.iloc[-1:]) #dataframe with last target row
+    sns.heatmap(cor, annot=True, cmap=plt.cm.Reds)
+    plt.title('Correlation matrix BEFORE cleanining dominant attributes')
+    plt.savefig('thyroid_project/resources/generated_images/correlation_matrix_thyroidDF_before_cleaning.png')
+    #plt.show()
+    plt.clf()
+    plt.cla()
+    '''
 
-# Some classes are more represented than others, so we need to add more entries in existing dataset
-thyroidDataset = add_more_data(thyroidDataset)
+    y = thyroidDataset['target']
+    x = thyroidDataset.drop('target', axis=1)
 
-thyroidDataset['target'] = [int(x) for x in thyroidDataset['target']]
-thyroidDataset['sex'] = [int(x) for x in thyroidDataset['sex']]
+    #Split data in two groups: 20% test, 80% train with shuffle method
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=True)
 
-'''
-# Generate list of 10 testing CSV files, where every CSV file contains dataframe with 22 columns and random number
-# of rows from 100 to number of entries in thyroidDataset (19428) with randomly entries get from that dataset
-listOfDatasets = generate_testing_random_datasets(thyroidDataset)
-'''
+    return thyroidDataset, columns, x_train, x_test, y_train, y_test
 
-# Correlation matrix for get information about weak, positive, negative correlations in DS for features
-plt.figure(figsize=(18, 16))
-cor = thyroidDataset.corr()
-print(cor.iloc[-1:]) #dataframe with last target row
-sns.heatmap(cor, annot=True, cmap=plt.cm.Reds)
-plt.title('Correlation matrix BEFORE cleanining dominant attributes')
-plt.show()
+def mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evaluate):
 
-y = thyroidDataset['target']
-x = thyroidDataset.drop('target', axis=1)
+    global evaluator
+    evaluator2 = thyroid_project.models.evaluator.Evaluator()
 
-#Split data in two groups: 20% test, 80% train with shuffle method
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=True)
+    if (evaluate == True):
 
-number_of_records_in_training_set = len(x_train)
-number_of_records_in_test_set = len(x_test)
+        clf = RandomForestClassifier(n_estimators = 100,
+                                     bootstrap=True,
+                                     max_depth=None,
+                                     n_jobs=-1,
+                                     min_samples_leaf=10,
+                                     min_samples_split=2,
+                                     random_state=123)
+        clf.fit(x_train, y_train)
+        coef = clf.feature_importances_
+        ind = np.argsort(-coef)
+        xtmp = range(x_train.shape[1])
+        ytmp = coef[ind][:x_train.shape[1]]
+        plt.title("Feature importances BEFORE cleaning")
+        ax = plt.subplot()
+        plt.barh(xtmp, ytmp, color='red')
+        ax.set_yticks(xtmp)
+        ax.set_yticklabels(columns[ind])
+        plt.gca().invert_yaxis()
+        plt.savefig('thyroid_project/resources/generated_images/feature_importances_thyroidDF_before_cleaning.png')
+        plt.clf()
+        plt.cla()
 
-remove_dominant_attributes = remove_dominant_attributes(pd.concat([x_train, y_train], axis='columns'))
-thyroidDataset.drop(remove_dominant_attributes, axis=1, inplace=True)
-x_train.drop(remove_dominant_attributes, axis=1, inplace=True)
-x_test.drop(remove_dominant_attributes, axis=1, inplace=True)
-columns = columns.drop(remove_dominant_attributes)
+    remove_dominant_attributes_list = remove_dominant_attributes(pd.concat([x_train, y_train], axis='columns'), columns)
+    thyroidDataset.drop(remove_dominant_attributes_list, axis=1, inplace=True)
+    x_train.drop(remove_dominant_attributes_list, axis=1, inplace=True)
+    x_test.drop(remove_dominant_attributes_list, axis=1, inplace=True)
+    columns = columns.drop(remove_dominant_attributes_list)
 
-# Checking importance of each feature in DS
-reg = LassoCV()
-reg.fit(x_train, y_train)
-print("Best alpha using built-in LassoCV: %f" % reg.alpha_)
+    if (evaluate == True):
 
-# Second time  check
-# Correlation matrix for get information about weak, positive, negative correlations in DS for features
-plt.figure(figsize=(18, 16))
-cor = thyroidDataset.corr()
-print(cor.iloc[-1:]) #dataframe with last target row
-sns.heatmap(cor, annot=True, cmap=plt.cm.Reds)
-plt.title('Correlation matrix AFTER cleanining dominant attributes')
-#plt.show()
+        thyroidDataset['target'] = [int(x) for x in thyroidDataset['target']]
+        thyroidDataset['sex'] = [int(x) for x in thyroidDataset['sex']]
 
-print("Best score using built-in LassoCV: %f" % reg.score(x_test, y_test))
-coef = pd.Series(reg.coef_, index=x_train.columns)
-print('Coefficients: ')
-print(coef.sort_values())
-print("Lasso picked " + str(sum(coef != 0)) + " variables and eliminated the other " + str(sum(coef == 0)) + " variables")
-imp_coef = coef.sort_values()
-import matplotlib
-matplotlib.rcParams['figure.figsize'] = (8.0, 10.0)
-imp_coef.plot(kind="barh")
-plt.title("Feature importance using Lasso Model")
-#plt.show()
+        thyroidDataset.hist(figsize=(20,20), xrot=-45)
+        plt.savefig('thyroid_project/resources/generated_images/attributes_distribution_thyroidDF_after_cleaning.png')
+        plt.clf()
+        plt.cla()
 
-global evaluator
-evaluator = evaluator.Evaluator()
-evaluator.evaluate(pd.concat([x_train, y_train], axis='columns'), columns)
+        # Generate list of 10 testing CSV files, where every CSV file contains dataframe with 22 columns and random number
+        # of rows from 100 to number of entries in thyroidDataset (19428) with randomly entries get from that dataset
+        listOfDatasets = generate_testing_random_datasets(thyroidDataset)
+
+        # Checking importance of each feature in DS
+        reg = LassoCV()
+        reg.fit(x_train, y_train)
+        print("Best alpha using built-in LassoCV: %f" % reg.alpha_)
+        # Second time check
+        # Correlation matrix for get information about weak, positive, negative correlations in DS for features
+        plt.figure(figsize=(18, 16))
+        cor = thyroidDataset.corr()
+        print(cor.iloc[-1:]) #dataframe with last target row
+        sns.heatmap(cor, annot=True, cmap=plt.cm.Reds)
+        plt.title('Correlation matrix AFTER cleanining dominant attributes')
+        plt.savefig('thyroid_project/resources/generated_images/correlation_matrix_thyroidDF_after_cleaning.png')
+        #plt.show()
+        plt.clf()
+        plt.cla()
+
+        clf = RandomForestClassifier(n_estimators = 100,
+                                     bootstrap=True,
+                                     max_depth=None,
+                                     n_jobs=-1,
+                                     min_samples_leaf=10,
+                                     min_samples_split=2,
+                                     random_state=123)
+        clf.fit(x_train, y_train)
+        coef = clf.feature_importances_
+        ind = np.argsort(-coef)
+        xtmp = range(x_train.shape[1])
+        ytmp = coef[ind][:x_train.shape[1]]
+        plt.title("Feature importances AFTER cleaning")
+        ax = plt.subplot()
+        plt.barh(xtmp, ytmp, color='red')
+        ax.set_yticks(xtmp)
+        ax.set_yticklabels(columns[ind])
+        plt.gca().invert_yaxis()
+        plt.savefig('thyroid_project/resources/generated_images/feature_importances_thyroidDF_after_cleaning.png')
+        plt.clf()
+        plt.cla()
+
+
+        evaluator2.evaluate(pd.concat([x_train, y_train], axis='columns'), columns)
+
+    return thyroidDataset, columns, x_train, x_test, y_train, y_test
+
+thyroidDataset, columns, x_train, x_test, y_train, y_test = prepareThyroidDataset()
+thyroidDataset, columns, x_train, x_test, y_train, y_test = \
+    mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evaluate=False)
 
 ########################################################################################################################
 ######################################################  PREDICTION  ####################################################
 
 #datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score = \
-#    predictDataWithMetrics('test_dataset_4', 'k_nearest_neighbours')
+#     predictDataWithMetrics('thyroidDF', 'naive_bayes_classifier_algorithm', columns, x_train, y_train, x_test, y_test)
 
 ########################################################################################################################
 ########################################################################################################################
