@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -11,6 +12,13 @@
     {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}"/>
 
+     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css"/>
+
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
     <title> Thyroid disease prediction app </title>
 </head>
 <body>
@@ -20,7 +28,7 @@
     </p>
 
     <div class="container">
-        <ul class="nav nav-tabs bg-light" id="tabs" role="tablist">
+        <ul class="nav nav-tabs bg-light">
             <li class="nav-item">
                 <a class="nav-link active text-dark" id="algorithms-tab" data-toggle="tab" href="#algorithms" role="tab" aria-controls="algorithms" aria-selected="true">Algoritmi mašinskog učenja</a>
             </li>
@@ -52,7 +60,7 @@
                             <i> - K nearest neighbours algorithm - </i>
 
                             <br><br>
-                            U prepoznavanju obrazaca, k-najbližih suseda (ili skraćeno k-NN) predstavlja neparametarski metod koji se koristi za klasifikaciju i regresiju.[1] U oba slučaja, ulaz se sastoji od k najbližih test primera u funkciji prostora. Izlaz zavisi od toga da li se k-NN koristio za klasifikaciju ili regresiju:
+                            U prepoznavanju obrazaca, k-najbližih suseda (ili skraćeno k-NN) predstavlja neparametarski metod koji se koristi za klasifikaciju i regresiju. U oba slučaja, ulaz se sastoji od k najbližih test primera u funkciji prostora. Izlaz zavisi od toga da li se k-NN koristio za klasifikaciju ili regresiju:
 
                             U k-NN klasifikaciji, izlaz je član klase. Objekat se klasifikuje glasovima većine svojih suseda, tako da objekat bude raspoređen u klasu najčešću među svojim k najbližim susedima (k je pozitivan ceo broj, najčešće mali broj). Ako je k = 1, onda se objekat jednostavno dodeljuje klasi tog jednog najbližeg suseda.
                             U k-NN regresiji, izlaz predstavlja vrednost objekta. Ova vrednost predstavlja prosek vrednosti njegovih k najbližih suseda.
@@ -72,7 +80,7 @@
                                   <li> način računanja distance između dva suseda na osnovu njihovih karakteristika (Euklidska distanca, Menhetn distanca, Minkowski distanca)</li>
                                 </ul>
                             </div>
-
+                            <br><br><br>
                         </div>
                     </div>
                     <div class="carousel-item fill">
@@ -102,6 +110,7 @@
                                   <li>metod na osnovu koga se vrši račvanje čvorova (Gini indeks, Entropija)</li>
                                 </ul>
                             </div>
+                            <br><br><br>
                         </div>
                     </div>
                     <div class="carousel-item">
@@ -135,7 +144,9 @@
                                   <li> broj atributa izabranih prilikom procesa kreiranja slučajne šume </li>
                                 </ul>
                             </div>
-
+                            <br>
+                            <br>
+                            <br>
                         </div>
                     </div>
                       <div class="carousel-item">
@@ -177,10 +188,10 @@
              Show training results for used thyroid dataset with parameters which were used in training process
              -->
             <div class="tab-pane fill bg-light" id="training_results" role="tabpanel" aria-labelledby="training-results-tab">
+                <br><br><br>
+                <h5 class="text-center">Metrike dobijene u procesu obučavanja <br> nad početnim skupom podataka</h5><br>
+                <div class="container fill bg-light justify-content-center">
 
-                <div class="container fill bg-light metrics-table">
-                    <br>
-                    <br>
                     <br>
                     <table class="metrics-table table text-center">
                       <thead>
@@ -195,34 +206,146 @@
                             <tbody>
                             <tr>
                                 <th scope="row"> Tačnost <br> [<i>Accuracy</i>] </th>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                <td>79,313%</td>
+                                <td>99.293%</td>
+                                <td>98.668%</td>
+                                <td>87.981%</td>
                             </tr>
                             <tr>
                                 <th scope="row"> Prezinost <br> [<i>Precision</i>] </th>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                <td>79.411%</td>
+                                <td>99.296&</td>
+                                <td>98.697%</td>
+                                <td>89.608%</td>
                             </tr>
                             <tr>
                                 <th scope="row"> Recall metrika <br> [<i>Recall</i>] </th>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                <td>79.313%</td>
+                                <td>99.293%</td>
+                                <td>98.668%</td>
+                                <td>87.981%</td>
                             </tr>
                             <tr>
                                 <th scope="row"> F1 metrika <br> [<i>F1 score</i>] </th>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                <td>79.314%</td>
+                                <td>99.292%</td>
+                                <td>98.662%</td>
+                                <td>87.912%</td>
                             </tr>
                       </tbody>
                     </table>
+                    <br><br>
+
+                    <div style="margin-left: 50px; margin-right: 50px; text-align: center;">
+                        <i> Prilikom proces obučavanja modela, izabrani su parametri koji utiču na metriku evaluacije i predikcije.<br> Za svaki algoritam data je vrednost izabranih parametara u nastavku za koje ovi algoritmi daju najbolju tačnost. </i>
+                    </div>
+
+                    <br><br>
+                    <div style="margin-left: 50px; margin-right: 50px">
+                        <p>
+                            <button class="btn btn-dark text-light" type="button" data-toggle="collapse" data-target="#knnParameters" aria-expanded="false" aria-controls="collapseExample">
+                                KNN parametri
+                            </button>
+                            <button class="btn btn-dark text-light" type="button" data-toggle="collapse" data-target="#dtParameters" aria-expanded="false" aria-controls="collapseExample">
+                                Stabla odlučivanja parametri
+                            </button>
+                            <button class="btn btn-dark text-light" type="button" data-toggle="collapse" data-target="#rfParameters" aria-expanded="false" aria-controls="collapseExample">
+                                Slučajne šume parametri
+                            </button>
+                            <button class="btn btn-dark text-light" type="button" data-toggle="collapse" data-target="#nbcParameters" aria-expanded="false" aria-controls="collapseExample">
+                                Naivni Bajesov klasifikator parametri
+                            </button>
+                        </p>
+                        <div class="collapse" id="knnParameters">
+                            <br>
+                            <div class="card card-body justify-content-center">
+                                <div style="text-align:center; margin-left: 50px; margin-right: 50px;">
+                                    <br>
+                                    Prilikom procesa obučavanja modela generisan je grafik koji predstavlja zavisnost tačnosti (<i>Accuracy</i>) evaluacije od izbora broja
+                                    najbližih suseda (<i>K</i>) čiji će podaci uticati na samu evaluaciju.
+                                    <br><br>
+                                </div>
+
+                                <!-- Button which opens modal for KNN training plot -->
+                                <button type="button" class="btn btn-light text-dark" data-toggle="modal" data-target="#knnDependencyPlot" style="width:135px; border-color:black; margin-left: 800px;">
+                                  Pogledaj grafik
+                                </button>
+
+                                <br>
+
+                                <div class="card">
+                                    <div class="card-body">
+                                        <a href="#" class="badge badge-danger" style="font-size:110%;"> K - 109 </a>
+                                        <a href="#" class="badge badge-danger" style="font-size:110%;"> Formula za razdaljinu - Euklidska </a>
+                                    </div>
+                                </div>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="knnDependencyPlot" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-md" role="document" style="min-width: 1000px ! important;">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="exampleModalCenterTitle"> Grafik zavisnosti K od tačnosti pri obučavanju KNN modela </h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <img src="{% static '/training_evaluation_images/knn_k_accuracy.png' %}" class="img-thumbnail rounded float-center w-200"/>
+                                            </div>
+                                            <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Zatvori</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="collapse" id="dtParameters">
+                            <div class="card card-body">
+                                <div style="text-align:center; margin-left: 50px; margin-right: 50px;">
+                                    <br>
+                                     Prilikom procesa obučavanja modela generisano je stablo odlučivanja za svaku grupu trening podataka, pomoću kojeg je određivana metrika nad validacionim podacima.
+                                     Tehnikom post-pruning se izvršeno <i>orezivanje</i> stabala, kako bi se unapredila tačnost evaluacije modela.
+                                    <br><br>
+                                </div>
+                                <br>
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Maksimalna dubina stabla - 5 </a>
+                                        <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Minimalan broj uzoraka po čvoru odluke - 2 </a>
+                                         <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Kalkulaciona funkcija metrike - Entropija </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="collapse" id="rfParameters">
+                            <div class="card card-body text-center">
+                                 <div style="text-align:center; margin-left: 50px; margin-right: 50px;">
+                                    <br>
+                                     Prilikom procesa obučavanja modela generisano je stablo odlučivanja za svaku grupu bootstrap podataka, pomoću kojeg je određivana metrika nad validacionim podacima.
+                                     Tehnikom post-pruning se izvršeno <i>orezivanje</i> stabala, kako bi se unapredila tačnost evaluacije modela.
+                                    <br><br>
+                                </div>
+                                <br>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Broj stabala slučajne šume - 50 </a>
+                                        <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Maksimalna dubina stabla - 12 </a> <br>
+                                        <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Minimalan broj uzoraka po čvoru odluke - 2 </a>
+                                         <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Kalkulaciona funkcija metrike - Entropija </a> <br>
+                                        <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Broj atributa - ukupan broj </a>
+                                         <a href="#" class="badge badge-danger" style="font-size:110%; margin: 4px;"> Broj podatak u bootstrap skupu - 400 </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="collapse" id="nbcParameters">
+                            <div class="card card-body">
+                                Ovaj algoritam ne koristi dodatne parametre prilikom procesa obučavanja i testiranja.
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -232,6 +355,53 @@
              Show test results for used thyroid dataset
             -->
             <div class="tab-pane fade fill bg-light" id="testing_results" role="tabpanel" aria-labelledby="testing-results-tab">
+                <br><br><br>
+                <h5 class="text-center">Metrike dobijene u procesu testiranja <br> nad početnim skupom podataka</h5><br>
+                 <div class="container fill bg-light">
+
+                    <br>
+                    <table class="metrics-table table text-center">
+                      <thead>
+                            <tr>
+                                <th scope="col"> Metrike algoritama mašinskog učenja </th>
+                                <th scope="col"> K najbližih suseda </th>
+                                <th scope="col"> Stabla odlučivanja </th>
+                                <th scope="col"> Slučajna šuma </th>
+                                <th scope="col"> Naivni Bajesov klasifikator </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th scope="row"> Tačnost <br> [<i>Accuracy</i>] </th>
+                                <td>80.564%</td>
+                                <td>99.259%</td>
+                                <td>98.394%</td>
+                                <td>87.75%</td>
+                            </tr>
+                            <tr>
+                                <th scope="row"> Prezinost <br> [<i>Precision</i>] </th>
+                                <td>80.665%</td>
+                                <td>99.264&</td>
+                                <td>98.426%</td>
+                                <td>89.434%</td>
+                            </tr>
+                            <tr>
+                                <th scope="row"> Recall metrika <br> [<i>Recall</i>] </th>
+                                <td>80.564%</td>
+                                <td>99.259%</td>
+                                <td>98.394%</td>
+                                <td>87.75%</td>
+                            </tr>
+                            <tr>
+                                <th scope="row"> F1 metrika <br> [<i>F1 score</i>] </th>
+                                <td>80.608%</td>
+                                <td>99.258%</td>
+                                <td>98.387%</td>
+                                <td>87.724%</td>
+                            </tr>
+                      </tbody>
+                    </table>
+                </div>
 
             </div>
 
@@ -248,13 +418,23 @@
                     <div class="card-body text-dark d-flex justify-content-center">
                         <blockquote class="blockquote mb-0">
                           <p> CSV fajl treba da sadrži iste kolone kao i početni skup podataka nad kojim je izvršeno obučavanje </p>
-
+                            <br>
                             <form action="see_prediction_results" method="post" enctype="multipart/form-data">
                                 {% csrf_token %}
-                                <input type="text" name="nameOfAlgorithm" id="formNameOfAlgorithm" style="width:300px; margin-left:30%"/>
-                                <br>
-                                <input type="file" name="datasetTestFile" id="formFileMultiple" style="width:300px; margin-left:30%"/>
-                                <br>
+                                <div class="row justify-content-center">
+                                    <div class="form-group">
+                                        <select class="form-control bg-light text-dark" id="algoritmListId" name="nameOfAlgorithm" placeholder="Izaberite algoritam za predikciju..."
+                                                style="width:200px; border-color:black;">
+                                            {% for algorithm_nickname, algorithm_name in algorithms.items %}
+                                                <option value="{{ algorithm_nickname }}"> {{ algorithm_name }} </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <input type="file" name="datasetTestFile" id="formFileMultiple" style="width:300px; margin-left: 70px; margin-top: 2px;" class="form-control-sm"
+                                        placeholder="Izaberite testni CSV fajl"/>
+                                </div>
+                              <br>
                                 <button type="submit" id="predict-button" class="btn btn-outline-dark" style="margin-left:42%" type="submit">
                                     Prediktuj
                                 </button>
@@ -266,6 +446,80 @@
                         </blockquote>
                     </div>
                 </div>
+
+                {% if request.session.data %}
+                <div class="container bg-light">
+                    <br><br>
+
+                    <div class="container" id="container_for_resulting_table">
+                          <h4 class="text-center"><u> Skup podataka o pacijentima i predikcije njihovih dijagnoza </u></h4><br>
+                          <table class="table" id="result_table">
+                            <thead>
+                              <tr>
+                                  <th> Godine </th>
+                                  <th> Pol </th>
+                                  <th> Query <br> Hyperthyroid </th>
+                                  <th> TSH </th>
+                                  <th> T3 </th>
+                                  <th> TT4 </th>
+                                  <th> T4U</th>
+                                  <th> FTI </th>
+                                  <th> Prediktovana <br> dijagnoza </th>
+                                  <th> Stvarna <br> dijagnoza </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                            {% if request.session.data  %}
+                            {% for i in data %}
+                              <tr>
+                                <td>{{i.age}}</td>
+                                <td>
+                                    {% if i.sex == 0 %}
+                                     Ž
+                                    {% else %}
+                                     M
+                                    {% endif %}
+                                </td>
+                                <td>{{i.query_hyperthyroid}}</td>
+                                <td>{{i.TSH}}</td>
+                                <td>{{i.T3}}</td>
+                                <td>{{i.TT4}}</td>
+                                <td>{{i.T4U}}</td>
+                                <td>{{i.FTI}}</td>
+                                <td>
+                                    {% if i.predicted_values == 0 %}
+                                     /
+                                    {% else %}
+                                        {% if i.predicted_values == 1 %}
+                                            Hipotiroidizam
+                                        {% else %}
+                                            Hipertiroidizam
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if i.actual_values == 0 %}
+                                     /
+                                    {% else %}
+                                        {% if i.actual_values == 1 %}
+                                            Hipotiroidizam
+                                        {% else %}
+                                            Hipertiroidizam
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                              </tr>
+                            {% endfor %}
+                            {% endif %}
+                            </tbody>
+                          </table>
+                        <br><br>
+                        <div style="text-align:center">
+                          <h5>  <i>Tačnost predikcije: <b> {{ request.session.accuracyMetric }} </b> </i>  </h5>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
         </div>
@@ -274,15 +528,35 @@
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
-            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-            crossorigin="anonymous"></script>
+
+
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
             integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
             integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
             crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <script>
+        $(document).ready( function () {
+            var table = $('#result_table').DataTable({
+                searching: false,
+                ordering: false,
+                pagingType: "numbers",
+                pageLength: 10,
+                lengthChange: false,
+                "createdRow": function( row, data, dataIndex ) {
+                     if (data[8] != data[9])
+                     {
+                        $( row ).css( "background-color", "Red");
+                     }
+                }});
+
+            if (!table.data().any()) {
+                $('#container_for_resulting_table').hide();
+            }
+
+        });
+    </script>
 </body>
 </html>

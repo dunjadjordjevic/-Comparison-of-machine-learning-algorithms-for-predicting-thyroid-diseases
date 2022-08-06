@@ -9,6 +9,7 @@ html, body {
 
 .fill {
     min-height: 100% !important;
+    height: 100vh;
 }
 
 .algorithm-info-container {
@@ -26,12 +27,17 @@ html, body {
 }
 
 .metrics-table {
-    margin: 5% 5%  5%  5% ! important ;
     width: 50%;
+    margin-left: 260px;
+    margin-top: 30px;
 }
 
-.container { height: 100%; }
+.container { height: 100vh; }
 
 #predict_page {
     height: 1000px;
+}
+
+.redClass {
+    background-color: red;
 }

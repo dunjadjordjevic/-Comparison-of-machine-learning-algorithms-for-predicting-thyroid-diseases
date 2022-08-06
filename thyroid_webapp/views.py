@@ -41,7 +41,8 @@ def predict(request):
             data = json.loads(json_records)
 
             request.session['data'] = data
-            return render(request, 'home.html',  {'algorithms': ALGORITHMS, 'data': data})
+            request.session['accuracyMetric'] = '{:,.3f}'.format(accuracy_metric)
+            return render(request, 'home.html',  {'algorithms': ALGORITHMS, 'data': data, 'accuracyMetric': accuracy_metric})
         else:
 
             print('Form with data is not valid - imported data are not valid. Please, try again with changed data.')
