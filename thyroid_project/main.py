@@ -152,7 +152,7 @@ def remap_target_data(thyroidDataset):
 def add_more_data(thyroidDataset):
 
     print('Before implementing SMOTE: ')
-    #print(thyroidDataset['target'].value_counts())
+    print(thyroidDataset['target'].value_counts())
 
     # SMOTE - Synthetic Minority Over-sampling Technique - adding more entries
     y = thyroidDataset['target'].astype(str)
@@ -318,6 +318,8 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
 
         # Generate confusion matrix for KNN
         knn_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions)
+        plt.figure(figsize=(10, 10))
+        plt.rcParams.update({'font.size': 16})
         knn_ax = sns.heatmap(knn_cf_matrix / np.sum(knn_cf_matrix), annot=True, fmt='.2%', cmap='Blues')
         knn_ax.set_title('KNN Confusion Matrix\n\n')
         knn_ax.set_xlabel('\nPredicted Values')
@@ -345,6 +347,8 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
 
         # Generate confusion matrix for DT
         dt_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions)
+        plt.figure(figsize=(10, 10))
+        plt.rcParams.update({'font.size': 16})
         dt_ax = sns.heatmap(dt_cf_matrix / np.sum(dt_cf_matrix), annot=True, fmt='.2%', cmap='Blues')
         dt_ax.set_title('DT Confusion Matrix\n\n')
         dt_ax.set_xlabel('\nPredicted Values')
@@ -377,6 +381,8 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
 
         # Generate confusion matrix for RT
         rf_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions)
+        plt.figure(figsize=(10, 10))
+        plt.rcParams.update({'font.size': 16})
         rf_ax = sns.heatmap(rf_cf_matrix / np.sum(rf_cf_matrix), annot=True, fmt='.2%', cmap='Blues')
         rf_ax.set_title('RF Confusion Matrix\n\n')
         rf_ax.set_xlabel('\nPredicted Values')
@@ -401,8 +407,10 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
 
         # Generate confusion matrix for Naive Bayes classifier
         nbc_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions)
+        plt.figure(figsize=(10, 10))
+        plt.rcParams.update({'font.size': 16})
         nbc_ax = sns.heatmap(nbc_cf_matrix / np.sum(nbc_cf_matrix), annot=True, fmt='.2%', cmap='Blues')
-        nbc_ax.set_title('Naive Bayes classifier Ccnfusion Matrix\n\n')
+        nbc_ax.set_title('Naive Bayes classifier Confusion Matrix\n\n')
         nbc_ax.set_xlabel('\nPredicted Values')
         nbc_ax.set_ylabel('Actual Values ')
         nbc_ax.xaxis.set_ticklabels(['0', '1', '2'])
@@ -472,7 +480,7 @@ def mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evalua
         ax.set_yticks(xtmp)
         ax.set_yticklabels(columns[ind])
         plt.gca().invert_yaxis()
-        plt.savefig('thyroid_project/resources/generated_images/feature_importances_thyroidDF_before_cleaning.png')
+        plt.savefig('thyroid_project/resources/generated_images/feature_importances_thyroidDF_before_cleaning.png', bbox_inches="tight")
         plt.clf()
         plt.cla()
 
@@ -534,7 +542,6 @@ def mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evalua
         plt.clf()
         plt.cla()
 
-
         evaluator2.evaluate(pd.concat([x_train, y_train], axis='columns'), columns)
 
     return thyroidDataset, columns, x_train, x_test, y_train, y_test
@@ -546,8 +553,8 @@ thyroidDataset, columns, x_train, x_test, y_train, y_test = \
 ########################################################################################################################
 ######################################################  PREDICTION  ####################################################
 
-#datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score = \
-#     predictDataWithMetrics('thyroidDF', 'naive_bayes_classifier_algorithm', columns, x_train, y_train, x_test, y_test)
+datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score = \
+     predictDataWithMetrics('thyroidDF', 'k_nearest_neighbours', columns, x_train, y_train, x_test, y_test)
 
 ########################################################################################################################
 ########################################################################################################################
