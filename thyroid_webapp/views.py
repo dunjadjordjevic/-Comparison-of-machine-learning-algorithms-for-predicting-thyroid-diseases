@@ -26,7 +26,7 @@ def predict(request):
             thyroidDataset, columns, x_train, x_test, y_train, y_test = mainMethod(thyroidDataset, columns, x_train,
                                                                                    x_test, y_train, y_test,
                                                                                    evaluate=False)
-            datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score = \
+            datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score, sensitivity = \
                 predictDataWithMetrics(fileForPrediction.name[:-4], request.POST['nameOfAlgorithm'], columns, x_train, y_train)
 
             prediction_dataset = datasetWithPrediction

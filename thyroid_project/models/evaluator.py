@@ -8,13 +8,14 @@ from thyroid_project.models.algorithms.naive_bayes_classifier import *
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 
-def print_metrics(scores, precision, recall, f1score):
+def print_metrics(scores, precision, recall, f1score, sensitivity):
 
     print('Scores: %s' % scores)
     print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
     print('Precision: %.3f%%' % (sum(precision) / float(len(precision))))
     print('Recall: %.3f%%' % (sum(recall) / float(len(recall))))
     print('F1 score: %.3f%%' % (sum(f1score) / float(len(f1score))))
+    print('Sensitivity: %.3f%%' % (sum(sensitivity) / float(len(sensitivity))))
 
 
 class Evaluator:
@@ -102,6 +103,7 @@ class Evaluator:
         precision = list()
         recall = list()
         f1score = list()
+        sensitivity = list()
 
         folds = self.cross_validation_split(dataset)
 
@@ -125,10 +127,11 @@ class Evaluator:
             scores.append(accuracy_metric*100)
             precision.append(precision_score(actual_values, prediction_values, average='weighted')*100)
             recall.append(recall_score(actual_values, prediction_values, average='weighted')*100)
+            sensitivity.append(recall_score(actual_values, prediction_values, pos_label=0, average='macro')*100)
             f1score.append(f1_score(actual_values, prediction_values, average='weighted')*100)
 
         print(scores)
-        return scores, precision, recall, f1score
+        return scores, precision, recall, f1score, sensitivity
 
     def predict_algorithm(self, train_set, test_set, columns, algorithm_name, *args):
 
@@ -154,13 +157,15 @@ class Evaluator:
         precision = precision_score(actual_values, prediction_values, average='weighted') * 100
         recall = recall_score(actual_values, prediction_values, average='weighted') * 100
         f1score = f1_score(actual_values, prediction_values, average='weighted') * 100
+        sensitivity = recall_score(actual_values, prediction_values, pos_label=0, average='macro') * 100
         print('Mean Accuracy for prediction is : %.3f%%' % accuracy_metric)
         print('Precision for prediction is : %.3f%%' % precision)
         print('Recall for prediction is : %.3f%%' % recall)
         print('F1 score for prediction is : %.3f%%' % f1score)
+        print('Sensitivity : %.3f%%' % sensitivity)
         print('--> End of prediction on test set <--')
 
-        return prediction_values, accuracy_metric, precision, recall, f1score
+        return prediction_values, accuracy_metric, precision, recall, f1score, sensitivity
 
     def evaluate(self, dataset, columns):
 
@@ -198,12 +203,13 @@ class Evaluator:
             print('K index is: ', k_index)
             f.write("k: " + str(k_index))
             k_values.append(k_index)
-            scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, k_index, w)
-            print_metrics(scores, precision, recall, f1score)
+            scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, k_index, w)
+            print_metrics(scores, precision, recall, f1score, sensitivity)
             accuracy_values.append((sum(scores) / float(len(scores))))
             precision_values.append((sum(precision) / float(len(precision))))
             recall_values.append((sum(recall) / float(len(recall))))
             f1score_values.append((sum(f1score) / float(len(f1score))))
+            sensitivity_values.append((sum(sensitivity) / float(len(sensitivity))))
             f.write("accuracy: " + str((sum(scores) / float(len(scores)))))
             f.write("\n")
             print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
@@ -254,8 +260,8 @@ class Evaluator:
         w = self.regularization_coeffients(x_train, y_train.values)
 
         print(" --> START of evaluation of KNN algorithm <-- \n")
-        scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, 109, w)
-        print_metrics(scores, precision, recall, f1score)
+        scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, 109, w)
+        print_metrics(scores, precision, recall, f1score, sensitivity)
         print(" --> END of evaluation of KNN algorithm <-- \n")
         '''
 
@@ -267,8 +273,8 @@ class Evaluator:
 
         print(" --> START of evaluation of classification decision tree algorithm <-- \n")
         dataset['target'] = pd.to_numeric(dataset['target'])
-        scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, max_depth, metric_function)
-        print_metrics(scores, precision, recall, f1score)
+        scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, max_depth, metric_function)
+        print_metrics(scores, precision, recall, f1score, sensitivity)
         print(" --> END of evaluation of classification decision tree algorithm <-- \n")
         '''
 
@@ -290,15 +296,15 @@ class Evaluator:
         metric_function = calculate_entropy
         for depth_of_tree in range(max_depth_from, max_depth_to, 2):
             max_depth_values.append(depth_of_tree)
-            scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, depth_of_tree, metric_function)
-            print_metrics(scores, precision, recall, f1score)
+            scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, depth_of_tree, metric_function)
+            print_metrics(scores, precision, recall, f1score, sensitivity)
             accuracy_entropy.append(sum(scores) / float(len(scores)))
 
         print(" --> Evaluation for GINI metric <-- \n")
         metric_function = calculate_gini
         for depth_of_tree in range(max_depth_from, max_depth_to, 2):
-            scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, depth_of_tree, metric_function)
-            print_metrics(scores, precision, recall, f1score)
+            scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, depth_of_tree, metric_function)
+            print_metrics(scores, precision, recall, f1score, sensitivity)
             accuracy_gini.append(sum(scores) / float(len(scores)))
 
         print(" --> END of evaluation of classification decision tree algorithm <-- \n")
@@ -324,7 +330,7 @@ class Evaluator:
 
         print(" --> START of evaluation of random forest algorithm <-- \n")
         dataset['target'] = pd.to_numeric(dataset['target'])
-        scores, precision, recall, f1score = self.evaluate_algorithm(dataset,
+        scores, precision, recall, f1score, sensitivity= self.evaluate_algorithm(dataset,
                                          columns,
                                          self.random_forest_algorithm_call,
                                          number_of_trees,
@@ -332,14 +338,14 @@ class Evaluator:
                                          number_of_features,
                                          max_depth,
                                          metric_function)
-        print_metrics(scores, precision, recall, f1score)
+        print_metrics(scores, precision, recall, f1score, sensitivity)
         print(" --> END of evaluation of random forest algorithm <-- \n")
         '''
 
         '''
         # Naive Bayes classifier algorithm
         print(" --> START of evaluation of Naive Bayes classifier algorithm <-- \n")
-        scores, precision, recall, f1score = self.evaluate_algorithm(dataset, columns, self.naive_bayes_classifier_call)
-        print_metrics(scores, precision, recall, f1score)
+        scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.naive_bayes_classifier_call)
+        print_metrics(scores, precision, recall, f1score, sensitivity)
         print(" --> END of evaluation of Naive Bayes classifier algorithm <-- \n")
         '''

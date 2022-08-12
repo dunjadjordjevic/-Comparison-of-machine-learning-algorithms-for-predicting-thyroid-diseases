@@ -306,7 +306,7 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
         y_train_tmp = tmp['target'].astype(int)
         w = Evaluator.regularization_coeffients(self=evaluator1, X=x_train, target=y_train_tmp.values)
 
-        predictions, accuracy_metric, precision, recall, f1score = evaluator1.predict_algorithm(
+        predictions, accuracy_metric, precision, recall, f1score, sensitivity = evaluator1.predict_algorithm(
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
@@ -334,7 +334,7 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
     elif (nameOfAlgorithm == 'decision_tree_algorithm'):
 
         # Predict with Decision tree algorithm
-        predictions, accuracy_metric, precision, recall, f1score = evaluator1.predict_algorithm(
+        predictions, accuracy_metric, precision, recall, f1score, sensitivity = evaluator1.predict_algorithm(
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
@@ -366,7 +366,7 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
         MAX_DEPTH_PREDICTED = 12
 
         # Predict with Random forest algorithm
-        predictions, accuracy_metric, precision, recall, f1score = evaluator1.predict_algorithm(
+        predictions, accuracy_metric, precision, recall, f1score, sensitivity = evaluator1.predict_algorithm(
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
@@ -397,7 +397,7 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
     elif (nameOfAlgorithm == 'naive_bayes_classifier_algorithm'):
 
         # Predict with Naive Bayes classifier algorithm
-        predictions, accuracy_metric, precision, recall, f1score = evaluator1.predict_algorithm(
+        predictions, accuracy_metric, precision, recall, f1score, sensitivity = evaluator1.predict_algorithm(
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
@@ -425,7 +425,7 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
     datasetWithPrediction = datasetWithPrediction.assign(actual_values=y_test)
     datasetWithPrediction.to_csv('thyroid_project/resources/generated_prediction_datasets/prediction_dataset.csv')
 
-    return datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score
+    return datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score, sensitivity
 
 ########################################################################################################################
 ######################################################  EVALUATION  ####################################################
@@ -553,8 +553,8 @@ thyroidDataset, columns, x_train, x_test, y_train, y_test = \
 ########################################################################################################################
 ######################################################  PREDICTION  ####################################################
 
-datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score = \
-     predictDataWithMetrics('thyroidDF', 'k_nearest_neighbours', columns, x_train, y_train, x_test, y_test)
+datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score, sensitivity = \
+     predictDataWithMetrics('thyroidDF', 'naive_bayes_classifier_algorithm', columns, x_train, y_train, x_test, y_test)
 
 ########################################################################################################################
 ########################################################################################################################
