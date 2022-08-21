@@ -200,6 +200,12 @@ def classify_entry(entry, tree):
 
 def classification_decision_tree(train_set, test_set, columns, min_samples=2, max_depth=5, metric_function=calculate_entropy):
 
+    for entry in train_set:
+        entry[-1] = int(entry[-1])
+
+    for entry in test_set:
+        entry[-1] = int(entry[-1])
+
     prediction_values = list()
     tree = decision_tree_algorithm(train_set, columns, min_samples=min_samples, max_depth=max_depth, metric_function=metric_function)
     print('Tree before post-pruning:\n')

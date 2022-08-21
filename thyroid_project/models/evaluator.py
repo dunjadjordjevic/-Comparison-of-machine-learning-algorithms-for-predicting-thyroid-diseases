@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 from random import randrange
+
+from sklearn.model_selection import KFold
+from sklearn.neighbors import KNeighborsClassifier
+
 from thyroid_project.models.algorithms.decision_tree import *
 from thyroid_project.models.algorithms.k_nearest_neighbours import *
 from thyroid_project.models.algorithms.random_forest import *
@@ -125,10 +129,10 @@ class Evaluator:
             actual_values = [int(x) for x in actual_values]
             accuracy_metric = accuracy_score(actual_values, prediction_values)
             scores.append(accuracy_metric*100)
-            precision.append(precision_score(actual_values, prediction_values, average='weighted')*100)
-            recall.append(recall_score(actual_values, prediction_values, average='weighted')*100)
+            precision.append(precision_score(actual_values, prediction_values, average='macro')*100)
+            recall.append(recall_score(actual_values, prediction_values, average='macro')*100)
             sensitivity.append(recall_score(actual_values, prediction_values, pos_label=0, average='macro')*100)
-            f1score.append(f1_score(actual_values, prediction_values, average='weighted')*100)
+            f1score.append(f1_score(actual_values, prediction_values, average='macro')*100)
 
         print(scores)
         return scores, precision, recall, f1score, sensitivity
@@ -149,14 +153,15 @@ class Evaluator:
 
 
         print('--> Starting with prediction on test set <--')
+        #test_set = [str(int(x)) for x in test_set[-1]]
         prediction_values = algorithm(train_set, test_set, columns, *args)
         prediction_values = [int(x) for x in prediction_values]
         actual_values = [entry[-1] for entry in test_set]
         actual_values = [int(x) for x in actual_values]
         accuracy_metric = accuracy_score(actual_values, prediction_values) * 100
-        precision = precision_score(actual_values, prediction_values, average='weighted') * 100
-        recall = recall_score(actual_values, prediction_values, average='weighted') * 100
-        f1score = f1_score(actual_values, prediction_values, average='weighted') * 100
+        precision = precision_score(actual_values, prediction_values, average='macro') * 100
+        recall = recall_score(actual_values, prediction_values, average='macro') * 100
+        f1score = f1_score(actual_values, prediction_values, average='macro') * 100
         sensitivity = recall_score(actual_values, prediction_values, pos_label=0, average='macro') * 100
         print('Mean Accuracy for prediction is : %.3f%%' % accuracy_metric)
         print('Precision for prediction is : %.3f%%' % precision)
@@ -176,6 +181,7 @@ class Evaluator:
         precision_values = list()
         recall_values = list()
         f1score_values = list()
+        sensitivity_values = list()
 
         self.number_of_records_in_training_set = len(dataset)
 
@@ -192,11 +198,11 @@ class Evaluator:
         x_train = dataset.drop('target', axis=1)
 
         w = self.regularization_coeffients(x_train, y_train.values)
-        f = open("thyroid_project/resources/k_values.txt", "w")
+        f = open("resources/k_values.txt", "w")
 
         print(" --> START of evaluation of KNN algorithm <-- \n")
 
-        for k_index in range(self.k_min, 131, 2):
+        for k_index in range(self.k_min, 91, 2):
             if (k_index % 2) == 0:
                 continue
 
@@ -215,55 +221,158 @@ class Evaluator:
             print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
             print(" --> END of evaluation of KNN algorithm <-- \n")
 
-        plt.plot(k_values, accuracy_values, label="Dependency of K and accuracy in KNN algorithm")
-        plt.title("Dependency of K and accuracy in KNN algorithm")
-        plt.xlabel("Number of neighbours")
-        plt.ylabel("Accuracy metric")
-        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_accuracy.png')
-        #plt.show()
         plt.clf()
         plt.cla()
 
-        plt.plot(k_values, precision_values, label="Dependency of K and precision in KNN algorithm")
-        plt.title("Dependency of K and precision in KNN algorithm")
-        plt.xlabel("Number of neighbours")
-        plt.ylabel("Precision metric")
-        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_precision.png')
-        plt.clf()
-        plt.cla()
+        plt1 = plt.plot(k_values, accuracy_values, label="tačnost",  color='blue')
+        plt2 = plt.plot(k_values, precision_values, label="preciznost",  color='red')
+        plt3 = plt.plot(k_values, recall_values, label="metrika odziva",  color='orange')
+        plt4 = plt.plot(k_values, f1score_values, label="metrika F1",  color='green')
+        plt5 = plt.plot(k_values, sensitivity_values, label="senzitivnost",  color='black')
 
-        plt.plot(k_values, recall_values, label="Dependency of K and recall in KNN algorithm")
-        plt.title("Dependency of K and recall in KNN algorithm")
-        plt.xlabel("Number of neighbours")
-        plt.ylabel("Recall metric")
-        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_recall.png')
-        plt.clf()
-        plt.cla()
-
-        plt.plot(k_values, f1score_values, label="Dependency of K and F1 score in KNN algorithm")
-        plt.title("Dependency of K and F1 score in KNN algorithm")
-        plt.xlabel("Number of neighbours")
-        plt.ylabel("F1 score metric")
-        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_f1score.png')
+        plt.title("Zavisnost metrike od broja suseda K", fontweight='bold', fontsize='18')
+        plt.legend(handles=[plt1[0], plt2[0],  plt3[0],  plt4[0],  plt5[0]])
+        plt.xlabel("Broj suseda K", fontweight='bold', fontsize='16')
+        plt.ylabel("Metrika", fontweight='bold', fontsize='16')
+        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_metrics.png')
         plt.clf()
         plt.cla()
 
         f.close()
-
         '''
 
         '''
-        # KNN algorithm, k = 109
+        # KNN with Library
+        precision_values = list()
+        recall_values = list()
+        f1score_values = list()
+        sensitivity_values = list()
+
+        self.number_of_records_in_training_set = len(dataset)
+
+        self.k_min = 3
+        self.k_max = math.sqrt((self.number_of_records_in_training_set - self.fold_size) * 0.8)
+
+        if (self.k_max % 2) == 0:
+            self.k_max = self.k_max + 1
+
+        k_values = []
+        accuracy_values = []
+
+        y_train = dataset['target'].astype(int)
+        x_train = dataset.drop('target', axis=1)
+
+        w = self.regularization_coeffients(x_train, y_train.values)
+        f = open("resources/k_values.txt", "w")
+
+        print(" --> START of evaluation of KNN algorithm <-- \n")
+
+        for k_index in range(self.k_min, 91, 2):
+            if (k_index % 2) == 0:
+                continue
+
+            print('K index is: ', k_index)
+            k_values.append(k_index)
+
+            #Ovo brisati
+            folds = self.cross_validation_split(dataset)
+            classifier = KNeighborsClassifier(n_neighbors=k_index, p=1)
+
+            for idx, fold in enumerate(folds):
+                train_folds = list(folds)
+                train_folds.remove(fold)
+                train_folds = sum(train_folds, [])
+
+                test_fold = list()
+                for entry_idx, entry in enumerate(fold):
+                    entry_tmp = list(entry)
+                    test_fold.append(entry_tmp)
+
+            y_train_clf = list()
+            for i in train_folds:
+                y_train_clf.append(int(i[-1]))
+                del i[-1]
+
+
+            print('Calling algorithm for test fold with index: ', idx)
+            classifier.fit(train_folds, y_train_clf)
+
+            accuracy_metric = classifier.score(train_folds, y_train_clf)*100
+            print('metrika: ', accuracy_metric)
+            accuracy_values.append(accuracy_metric)
+
+            #i ovo
+            print(" --> END of evaluation of KNN algorithm <-- \n")
+
+        plt.clf()
+        plt.cla()
+
+        plt1 = plt.plot(k_values, accuracy_values, label="tačnost", color='blue')
+        plt.title("Zavisnost metrike od broja suseda K", fontweight='bold', fontsize='18')
+        plt.legend(handles=[plt1[0]])
+        plt.xlabel("Broj suseda K", fontweight='bold', fontsize='16')
+        plt.ylabel("Metrika", fontweight='bold', fontsize='16')
+        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_metrics_sklearn_classifier_minkowski.png')
+        plt.clf()
+        plt.cla()
+        '''
+
+        '''
+        # KNN algorithm, k = 71
 
         y_train = dataset['target'].astype(int)
         x_train = dataset.drop('target', axis=1)
         w = self.regularization_coeffients(x_train, y_train.values)
 
         print(" --> START of evaluation of KNN algorithm <-- \n")
-        scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, 109, w)
+        scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.k_nearest_neigbours_call, 69, w)
         print_metrics(scores, precision, recall, f1score, sensitivity)
         print(" --> END of evaluation of KNN algorithm <-- \n")
         '''
+
+        '''
+        # Code for checking few values for K
+        f = open("resources/k_values.txt", "w")
+        k_values = []
+        accuracy_values = []
+
+        y_train = dataset['target'].astype(int)
+        x_train = dataset.drop('target', axis=1)
+        w = self.regularization_coeffients(x_train, y_train.values)
+
+        for k_index in range(65, 80, 2):
+
+            if (k_index % 2) == 0:
+                continue
+
+            print('K index is: ', k_index)
+            f.write("k: " + str(k_index))
+            k_values.append(k_index)
+            scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns,
+                                                                                      self.k_nearest_neigbours_call,
+                                                                                      k_index, w)
+            print_metrics(scores, precision, recall, f1score, sensitivity)
+            accuracy_values.append((sum(scores) / float(len(scores))))
+            f.write("accuracy: " + str((sum(scores) / float(len(scores)))))
+            f.write("\n")
+            print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
+            print(" --> END of evaluation of KNN algorithm <-- \n")
+
+        plt.clf()
+        plt.cla()
+
+        plt1 = plt.plot(k_values, accuracy_values, color='blue')
+
+        plt.title("Zavisnost metrike od broja suseda K", fontweight='bold', fontsize='18')
+        plt.xlabel("Broj suseda K", fontweight='bold', fontsize='16')
+        plt.ylabel("Metrika", fontweight='bold', fontsize='16')
+        plt.savefig('resources/generated_images/training_evaluation_images/knn_k_metrics_manually.png')
+        plt.clf()
+        plt.cla()
+
+        f.close()
+        '''
+
 
         '''
         # Classification decision tree algorithm
@@ -283,7 +392,7 @@ class Evaluator:
 
         min_samples = 2
         max_depth_from = 1
-        max_depth_to = len(columns)-1
+        max_depth_to = len(columns)+5
 
         max_depth_values = []
         accuracy_gini = []
@@ -294,7 +403,7 @@ class Evaluator:
 
         print(" --> Evaluation for ENTROPY metric <-- \n")
         metric_function = calculate_entropy
-        for depth_of_tree in range(max_depth_from, max_depth_to, 2):
+        for depth_of_tree in range(max_depth_from, max_depth_to, 1):
             max_depth_values.append(depth_of_tree)
             scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, depth_of_tree, metric_function)
             print_metrics(scores, precision, recall, f1score, sensitivity)
@@ -302,18 +411,20 @@ class Evaluator:
 
         print(" --> Evaluation for GINI metric <-- \n")
         metric_function = calculate_gini
-        for depth_of_tree in range(max_depth_from, max_depth_to, 2):
+        for depth_of_tree in range(max_depth_from, max_depth_to, 1):
             scores, precision, recall, f1score, sensitivity = self.evaluate_algorithm(dataset, columns, self.decision_tree_algorithm_call, min_samples, depth_of_tree, metric_function)
             print_metrics(scores, precision, recall, f1score, sensitivity)
             accuracy_gini.append(sum(scores) / float(len(scores)))
 
         print(" --> END of evaluation of classification decision tree algorithm <-- \n")
 
-        plt.plot(max_depth_values, accuracy_gini)
-        plt.plot(max_depth_values, accuracy_entropy)
-        plt.xlabel("Maximum depth of a tree")
-        plt.ylabel("Accuracy metric")
-        plt.savefig('resources/generated_images/training_evaluation_images/dt_max_depth_accuracy.png')
+        plt.title("Grafik zavisnosti tačnosti od dubine stabla za korišćene funkcije odluke", fontweight='bold', fontsize='18')
+        plt1 = plt.plot(max_depth_values, accuracy_gini, color='orange', label='gini')
+        plt2 = plt.plot(max_depth_values, accuracy_entropy, color='blue', label='entropy')
+        plt.legend(handles=[plt1[0], plt2[0]])
+        plt.xlabel("Maksimalna dubina stabla", fontweight='bold', fontsize='16')
+        plt.ylabel("Metrika tačnosti", fontweight='bold', fontsize='16')
+        plt.savefig('resources/generated_images/training_evaluation_images/dt_max_depth_accuracy_with_normalization2.png', bbox_inches="tight", pad_inches=1)
         #plt.show()
         plt.clf()
         plt.cla()
@@ -325,7 +436,7 @@ class Evaluator:
         number_of_trees = 50
         number_of_data_in_bootstrap_dataset = 400
         number_of_features = 800
-        max_depth = 12
+        max_depth = 8
         metric_function = calculate_entropy
 
         print(" --> START of evaluation of random forest algorithm <-- \n")

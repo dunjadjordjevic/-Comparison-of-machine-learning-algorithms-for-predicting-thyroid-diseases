@@ -1,7 +1,13 @@
+from collections import Counter
+from sklearn import preprocessing
+
 import pandas as pd
 import seaborn as sns
 from random import randint
+
+from imblearn.combine import SMOTETomek
 from imblearn.over_sampling import SMOTE
+from matplotlib import pyplot
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.linear_model import LassoCV
 from sklearn.model_selection import train_test_split
@@ -12,8 +18,8 @@ from thyroid_project.models.evaluator import *
 from sklearn.metrics import confusion_matrix
 from thyroid_project.models.post_pruning import *
 
-def clear_dataset(thyroidDataset, columns):
 
+def clear_dataset(thyroidDataset, columns):
     print('Thyroid dataset cleaning START')
 
     missingness = thyroidDataset.isnull().sum().sum() / thyroidDataset.count().sum()
@@ -50,12 +56,12 @@ def clear_dataset(thyroidDataset, columns):
     total = thyroidDataset.isnull().sum().sort_values(ascending=False)
     percent = (thyroidDataset.isnull().sum() / thyroidDataset.isnull().count()).sort_values(ascending=False)
     missing_data_table = pd.concat([total, percent], axis=1, keys=['Total', 'Percentage'])
-    #print(missing_data_table.head(10))
+    # print(missing_data_table.head(10))
 
     # TBG has 96% of null data -> remove this column from dataset because is too important for analyzing
-    #For every column that has missingness more than 80%, remove it from DF
+    # For every column that has missingness more than 80%, remove it from DF
     for idx, entry in missing_data_table.iterrows():
-        if ((entry['Percentage']*100) >= 80):
+        if ((entry['Percentage'] * 100) >= 80):
             thyroidDataset.drop([entry.name], axis=1, inplace=True)
             columns = columns.drop([entry.name])
 
@@ -82,8 +88,8 @@ def clear_dataset(thyroidDataset, columns):
     # Remove entries where 'sex' is nan value
     thyroidDataset.dropna(subset=['sex'], inplace=True)
 
-    #print('Thyroid dataset null values by column after updating')
-    #print(thyroidDataset.isnull().sum())
+    # print('Thyroid dataset null values by column after updating')
+    # print(thyroidDataset.isnull().sum())
 
     ######################################## --> MAX/MIN unexpected values check <-- ##################################
 
@@ -103,25 +109,26 @@ def clear_dataset(thyroidDataset, columns):
         thyroidDataset = thyroidDataset.drop_duplicates()
 
     missingness = thyroidDataset.isnull().sum().sum() / thyroidDataset.count().sum()
-    #print('Overall missingness of thyroidDF after cleaning is: {:.2f}%'.format(missingness * 100))
+    # print('Overall missingness of thyroidDF after cleaning is: {:.2f}%'.format(missingness * 100))
 
     ################################## Checking unique values for target page #########################################
 
-    #print("Unique values for columns: ")
-    #print(thyroidDataset['target'].unique())
+    # print("Unique values for columns: ")
+    # print(thyroidDataset['target'].unique())
 
     print('Thyroid dataset cleaning END')
 
     return thyroidDataset, columns
 
-def remap_target_data(thyroidDataset):
 
+def remap_target_data(thyroidDataset):
     # Target column in thyroid dataset include Strings which represents exact diagnose with multiple
     # parameters for each patient; This column will be mapped to have only 3 possible values (output classes):
     # hyperthyroid, hypothyroid, negative
     # so classification process will be easier done
     # Mapping for values will be convert to int values: negative -> 0, hypo -> 1, hyper -> 2
 
+    '''
     diagnoses = {'-': 'negative',
                  'A': 'hyperthyroid',
                  'B': 'hyperthyroid',
@@ -133,8 +140,21 @@ def remap_target_data(thyroidDataset):
                  'H': 'hypothyroid'}
 
     thyroidDataset['target'] = thyroidDataset['target'].map(diagnoses)
-    thyroidDataset.dropna(subset=['target'], inplace=True) #remove all data that are not in those 3 classes
-    thyroidDataset = thyroidDataset.replace({'negative': 0, 'hypothyroid': 1, 'hyperthyroid': 2})
+    '''
+
+    thyroidDataset.dropna(subset=['target'], inplace=True)  # remove all data that are not in those 3 classes
+    # thyroidDataset = thyroidDataset.replace({'negative': 0, 'hypothyroid': 1, 'hyperthyroid': 2})
+
+    for idx, entry in thyroidDataset.iterrows():
+        if (len(entry['target']) > 1):
+            thyroidDataset.drop(idx, inplace=True)
+
+    thyroidDataset = thyroidDataset.replace({'-': 0, 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8,
+                                             'I': 9, 'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16,
+                                             'Q': 17,
+                                             'R': 18, 'S': 18, 'T': 18})
+
+    # class 18 - miscellaneous
     thyroidDataset['target'] = thyroidDataset['target'].astype('int')
 
     if thyroidDataset['target'].isnull().sum():
@@ -143,22 +163,50 @@ def remap_target_data(thyroidDataset):
     else:
         print('There are no null values in target column\n')
 
-    #print(thyroidDataset['target'].unique())
+    counts = thyroidDataset['target'].value_counts()
+    thyroidDataset = thyroidDataset[~thyroidDataset['target'].isin(counts[counts <= 100].index)]
+
+    thyroidDataset = thyroidDataset.groupby("target").head(1000)
+
+    # Distribution data for classes
+    plt.clf()
+    plt.cla()
+    counter = Counter(thyroidDataset['target'])
+    for k, v in counter.items():
+        per = v / len(thyroidDataset['target']) * 100
+        print('Class=%d, n=%d (%.3f%%)' % (k, v, per))
+    plt.figure(figsize=(18, 16))
+    plt.bar(list(counter.keys()), counter.values())
+    default_x_ticks = range(len(list(counter.keys())))
+    plt.xticks(default_x_ticks, list(counter.keys()))
+    plt.title('Prikaz distribucije podataka po klasama', fontweight='bold', fontsize='18')
+    plt.xlabel('Klase podataka', fontweight='bold', fontsize='18')
+    plt.ylabel('Broj podataka po klasi', fontweight='bold', fontsize='18')
+    plt.savefig('thyroid_project/resources/generated_images/thyroid_ds_distribution_of_data_in_classes.png')
+    plt.clf()
+    plt.cla()
+
+    print('Unique values in dataset are: ')
+    print(thyroidDataset['target'].unique())
 
     print('Remapping has been done on thyroid dataset!')
 
     return thyroidDataset
 
-def add_more_data(thyroidDataset):
 
+def add_more_data(thyroidDataset):
     print('Before implementing SMOTE: ')
     print(thyroidDataset['target'].value_counts())
 
     # SMOTE - Synthetic Minority Over-sampling Technique - adding more entries
     y = thyroidDataset['target'].astype(str)
     X = thyroidDataset.drop(columns=['target'], axis=1)
-    oversample = SMOTE()
-    X_smoted, y_smoted = oversample.fit_resample(X, y)
+    # oversample = SMOTE()
+    # X_smoted, y_smoted = oversample.fit_resample(X, y)
+
+    smote_tomek = SMOTETomek(random_state=888)
+    X_smoted, y_smoted = smote_tomek.fit_resample(X, y)
+
     y_smoted = pd.Series(y_smoted)
     y_smoted.value_counts()
     thyroidDataset = pd.concat([X_smoted, y_smoted], axis='columns')
@@ -167,14 +215,25 @@ def add_more_data(thyroidDataset):
     print(thyroidDataset['target'].value_counts())
     return thyroidDataset
 
+
 #######################################################################################################################
 
 
 def generate_testing_random_datasets(thyroidDataset):
-
     listOfDatasets = []
     numberOfEntriesInInitialDataset = thyroidDataset.shape[0]
     print('Number of entries in dataset is: ', numberOfEntriesInInitialDataset)
+
+    y = thyroidDataset['target']
+    x = thyroidDataset.drop('target', axis=1)
+
+    # normalization of the data
+    x = x.values  # returns a numpy array
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x_scaled = min_max_scaler.fit_transform(x)
+    x_train = pd.DataFrame(x_scaled, columns=thyroidDataset.columns[:-1])
+
+    thyroidDataset = pd.concat([x_train, y], axis='columns')
 
     for i in range(1, 10, 1):
         newDataset = thyroidDataset.sample(n=randint(100, numberOfEntriesInInitialDataset), random_state=1)
@@ -190,14 +249,13 @@ def generate_testing_random_datasets(thyroidDataset):
 # do evaluation/prediction with specific algorithm depending on input parameters
 
 def analyze_dataset(dataset, x_train, y_train, x_test, y_test):
-
     # Correlation matrix for get information about weak, positive, negative correlations in DS for features
-    plt.figure(figsize=(18, 16))
+    plt.figure(figsize=(22, 20))
     cor = dataset.corr()
     sns.heatmap(cor, annot=True, cmap=plt.cm.Reds)
     plt.title("Correlation matrix for thyroid dataset")
     plt.savefig('thyroid_project/resources/generated_images/thyroid_ds_attribute_correlation_matrix.png')
-    #plt.show()
+    # plt.show()
     plt.clf()
     plt.cla()
 
@@ -215,13 +273,12 @@ def analyze_dataset(dataset, x_train, y_train, x_test, y_test):
     imp_coef.plot(kind="barh")
     plt.title("Feature importance using Lasso Model")
     plt.savefig('thyroid_project/resources/generated_images/thyroid_ds_attribute_importance.png')
-    #plt.show()
+    # plt.show()
     plt.clf()
     plt.cla()
 
 
 def upload_CSV_file(nameOfFile):
-
     if (nameOfFile == 'thyroidDF'):
         dataset = pd.read_csv('thyroid_project/resources/' + nameOfFile + '.csv')
     else:
@@ -230,9 +287,13 @@ def upload_CSV_file(nameOfFile):
     columns = dataset.columns
     listOfDatasets = list()
 
+    print('Dataset dimensions BEFORE pretprocessing')
+    print('Dataset number of rows: ', len(dataset))
+    print('Dataset number of columns: ', len(dataset.columns))
+
     if (nameOfFile == 'thyroidDF'):
 
-        #Evaluation/Prediction for starting dataset
+        # Evaluation/Prediction for starting dataset
         dataset, columns = clear_dataset(dataset, columns)
         dataset = remap_target_data(dataset)
 
@@ -243,7 +304,6 @@ def upload_CSV_file(nameOfFile):
 
 
 def remove_dominant_attributes(train_dataset, columns):
-
     helper = train_dataset
     modes = helper.mode()
 
@@ -258,8 +318,9 @@ def remove_dominant_attributes(train_dataset, columns):
 
     return dominant_attributes
 
-def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForDataset=None, x_train=None, y_train=None, x_test=None, y_test=None):
 
+def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForDataset=None, x_train=None, y_train=None,
+                           x_test=None, y_test=None):
     evaluator1 = thyroid_project.models.evaluator.Evaluator()
     datasetWithPrediction = None
     accuracy = None
@@ -270,36 +331,40 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
     if 'Unnamed: 0' in columns:
         columns = columns.drop(['Unnamed: 0'])
 
-    #in case thyroid_dataset
+    # in case thyroid_dataset
     if (columnsForDataset is not None):
         columns = columnsForDataset
 
-    #in case not thyroid_dataset
+    # in case not thyroid_dataset
     if (x_test is None and y_test is None):
         y_test = dataset['target']
         x_test = dataset.drop('target', axis=1)
 
-
-    # Split data in two groups: 20% test, 80% train with shuffle method
-    #x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=True)
-
     if (nameOfFileForDataset == 'thyroidDF'):
         analyze_dataset(dataset, x_train, y_train, x_test, y_test)
 
-    number_of_records_in_training_set = len(x_train)
-    number_of_records_in_test_set = len(x_test)
-
     # Putting parameter values for ML algorithms set by training process
-    NUMBER_OF_NEIGHBOURS_PREDICTED = 109
+    NUMBER_OF_NEIGHBOURS_PREDICTED = 71
     MIN_SAMPLE_PREDICTED = 2
-    MAX_DEPTH_PREDICTED = 5
+    MAX_DEPTH_PREDICTED = 8
     CALCULATE_METRIC = calculate_entropy
     NUMBER_OF_TREES_PREDICTED = 50
     NUMBER_OF_DATA_IN_BOOTSTRAP_DATASET = 400
     NUMBER_OF_FEATURES = 800
 
+    classes = [0, 1, 6, 7, 9, 11, 12, 13, 14, 18]
+    name_of_classes = ['negative', 'hyperthyroid', 'primary hypothyroid', 'compensated hypothyroid',
+                       'increased binding protein', 'concurrent non-thyroidal illness',
+                       'consistent with replacement therapy', 'underreplaced', 'overreplaced', 'miscellaneous']
+
     print('Prediction for algorithm: ', nameOfAlgorithm)
-    if(nameOfAlgorithm == 'k_nearest_neighbours'):
+
+    x_train.reset_index(drop=True, inplace=True)
+    y_train.reset_index(drop=True, inplace=True)
+    x_test.reset_index(drop=True, inplace=True)
+    y_test.reset_index(drop=True, inplace=True)
+
+    if (nameOfAlgorithm == 'k_nearest_neighbours'):
 
         # Predict with KNN algorithm
         tmp = pd.concat([x_train, y_train], axis='columns')
@@ -317,17 +382,19 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
         predictions = [int(x) for x in predictions]
 
         # Generate confusion matrix for KNN
-        knn_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions)
-        plt.figure(figsize=(10, 10))
+        knn_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions, labels=classes)
+        plt.figure(figsize=(30, 20))
         plt.rcParams.update({'font.size': 16})
         knn_ax = sns.heatmap(knn_cf_matrix / np.sum(knn_cf_matrix), annot=True, fmt='.2%', cmap='Blues')
-        knn_ax.set_title('KNN Confusion Matrix\n\n')
-        knn_ax.set_xlabel('\nPredicted Values')
-        knn_ax.set_ylabel('Actual Values ')
-        knn_ax.xaxis.set_ticklabels(['0', '1', '2'])
-        knn_ax.yaxis.set_ticklabels(['0', '1', '2'])
-        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png')
-        #plt.show()
+        knn_ax.set_title('KNN Confusion Matrix\n\n', fontweight='bold', fontsize='18')
+        knn_ax.set_xlabel('\nPredicted Values', fontweight='bold', fontsize='16')
+        knn_ax.set_ylabel('Actual Values', fontweight='bold', fontsize='16')
+        knn_ax.xaxis.set_ticklabels(name_of_classes)
+        knn_ax.yaxis.set_ticklabels(name_of_classes)
+        plt.xticks(rotation=90)
+        plt.yticks(rotation=0)
+        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png', bbox_inches="tight", pad_inches=1)
+        # plt.show()
         plt.clf()
         plt.cla()
 
@@ -346,17 +413,19 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
         predictions = [int(x) for x in predictions]
 
         # Generate confusion matrix for DT
-        dt_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions)
-        plt.figure(figsize=(10, 10))
+        dt_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions, labels=classes)
+        plt.figure(figsize=(30, 20))
         plt.rcParams.update({'font.size': 16})
         dt_ax = sns.heatmap(dt_cf_matrix / np.sum(dt_cf_matrix), annot=True, fmt='.2%', cmap='Blues')
-        dt_ax.set_title('DT Confusion Matrix\n\n')
-        dt_ax.set_xlabel('\nPredicted Values')
-        dt_ax.set_ylabel('Actual Values ')
-        dt_ax.xaxis.set_ticklabels(['0', '1', '2'])
-        dt_ax.yaxis.set_ticklabels(['0', '1', '2'])
-        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png')
-        #plt.show()
+        dt_ax.set_title('DT Confusion Matrix\n\n', fontsize='18')
+        dt_ax.set_xlabel('\nPredicted Values', fontweight='bold', fontsize='16')
+        dt_ax.set_ylabel('Actual Values', fontweight='bold', fontsize='16')
+        dt_ax.xaxis.set_ticklabels(name_of_classes)
+        dt_ax.yaxis.set_ticklabels(name_of_classes)
+        plt.xticks(rotation=90)
+        plt.yticks(rotation=0)
+        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png', bbox_inches="tight", pad_inches=1)
+        # plt.show()
         plt.clf()
         plt.cla()
 
@@ -380,17 +449,19 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
         predictions = [int(x) for x in predictions]
 
         # Generate confusion matrix for RT
-        rf_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions)
-        plt.figure(figsize=(10, 10))
+        rf_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions, labels=classes)
+        plt.figure(figsize=(30, 20))
         plt.rcParams.update({'font.size': 16})
         rf_ax = sns.heatmap(rf_cf_matrix / np.sum(rf_cf_matrix), annot=True, fmt='.2%', cmap='Blues')
-        rf_ax.set_title('RF Confusion Matrix\n\n')
-        rf_ax.set_xlabel('\nPredicted Values')
-        rf_ax.set_ylabel('Actual Values ')
-        rf_ax.xaxis.set_ticklabels(['0', '1', '2'])
-        rf_ax.yaxis.set_ticklabels(['0', '1', '2'])
-        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png')
-        #plt.show()
+        rf_ax.set_title('RF Confusion Matrix\n\n', fontweight='bold', fontsize='18')
+        rf_ax.set_xlabel('\nPredicted Values', fontweight='bold', fontsize='16')
+        rf_ax.set_ylabel('Actual Values ', fontweight='bold', fontsize='16')
+        rf_ax.xaxis.set_ticklabels(name_of_classes)
+        rf_ax.yaxis.set_ticklabels(name_of_classes)
+        plt.xticks(rotation=90)
+        plt.yticks(rotation=0)
+        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png', bbox_inches="tight", pad_inches=1)
+        # plt.show()
         plt.clf()
         plt.cla()
 
@@ -401,22 +472,21 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
             pd.concat([x_train, y_train], axis='columns'),
             pd.concat([x_test, y_test], axis='columns'),
             columns,
-             'naive_bayes_classifier_algorithm')
+            'naive_bayes_classifier_algorithm')
 
-        nbc_prediction_values = [int(x) for x in predictions]
-
-        # Generate confusion matrix for Naive Bayes classifier
-        nbc_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions)
-        plt.figure(figsize=(10, 10))
+        nbc_cf_matrix = confusion_matrix(y_test.values.astype(int), predictions, labels=classes)
+        plt.figure(figsize=(30, 20))
         plt.rcParams.update({'font.size': 16})
         nbc_ax = sns.heatmap(nbc_cf_matrix / np.sum(nbc_cf_matrix), annot=True, fmt='.2%', cmap='Blues')
-        nbc_ax.set_title('Naive Bayes classifier Confusion Matrix\n\n')
-        nbc_ax.set_xlabel('\nPredicted Values')
-        nbc_ax.set_ylabel('Actual Values ')
-        nbc_ax.xaxis.set_ticklabels(['0', '1', '2'])
-        nbc_ax.yaxis.set_ticklabels(['0', '1', '2'])
-        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png')
-        #plt.show()
+        nbc_ax.set_title('Naive Bayes classifier Confusion Matrix\n\n', fontweight='bold', fontsize='18')
+        nbc_ax.set_xlabel('\nPredicted Values', fontweight='bold', fontsize='16')
+        nbc_ax.set_ylabel('Actual Values ', fontweight='bold', fontsize='16')
+        nbc_ax.xaxis.set_ticklabels(name_of_classes)
+        nbc_ax.yaxis.set_ticklabels(name_of_classes)
+        plt.xticks(rotation=90)
+        plt.yticks(rotation=0)
+        plt.savefig('thyroid_project/resources/generated_images/confusion_matrix.png', bbox_inches="tight", pad_inches=1)
+        # plt.show()
         plt.clf()
         plt.cla()
 
@@ -427,11 +497,11 @@ def predictDataWithMetrics(nameOfFileForDataset, nameOfAlgorithm, columnsForData
 
     return datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score, sensitivity
 
+
 ########################################################################################################################
 ######################################################  EVALUATION  ####################################################
 
 def prepareThyroidDataset():
-
     thyroidDataset, columns, listOfDatasets = upload_CSV_file('thyroidDF')
 
     '''
@@ -450,10 +520,11 @@ def prepareThyroidDataset():
     y = thyroidDataset['target']
     x = thyroidDataset.drop('target', axis=1)
 
-    #Split data in two groups: 20% test, 80% train with shuffle method
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=True)
+    # Split data in two groups: 25% test, 75% train with shuffle method
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=True, stratify=y)
 
     return thyroidDataset, columns, x_train, x_test, y_train, y_test
+
 
 def mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evaluate):
 
@@ -461,28 +532,28 @@ def mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evalua
     evaluator2 = thyroid_project.models.evaluator.Evaluator()
 
     if (evaluate == True):
-
-        clf = RandomForestClassifier(n_estimators = 100,
-                                     bootstrap=True,
-                                     max_depth=None,
-                                     n_jobs=-1,
-                                     min_samples_leaf=10,
-                                     min_samples_split=2,
-                                     random_state=123)
-        clf.fit(x_train, y_train)
-        coef = clf.feature_importances_
-        ind = np.argsort(-coef)
-        xtmp = range(x_train.shape[1])
-        ytmp = coef[ind][:x_train.shape[1]]
-        plt.title("Feature importances BEFORE cleaning")
-        ax = plt.subplot()
-        plt.barh(xtmp, ytmp, color='red')
-        ax.set_yticks(xtmp)
-        ax.set_yticklabels(columns[ind])
-        plt.gca().invert_yaxis()
-        plt.savefig('thyroid_project/resources/generated_images/feature_importances_thyroidDF_before_cleaning.png', bbox_inches="tight")
-        plt.clf()
-        plt.cla()
+        # clf = RandomForestClassifier(n_estimators=100,
+        #                              bootstrap=True,
+        #                              max_depth=None,
+        #                              n_jobs=-1,
+        #                              min_samples_leaf=10,
+        #                              min_samples_split=2,
+        #                              random_state=123)
+        # clf.fit(x_train, y_train)
+        # coef = clf.feature_importances_
+        # ind = np.argsort(-coef)
+        # xtmp = range(x_train.shape[1])
+        # ytmp = coef[ind][:x_train.shape[1]]
+        # plt.title("Feature importances BEFORE cleaning")
+        # ax = plt.subplot()
+        # plt.barh(xtmp, ytmp, color='red')
+        # ax.set_yticks(xtmp)
+        # ax.set_yticklabels(columns[ind])
+        # plt.gca().invert_yaxis()
+        # plt.savefig('thyroid_project/resources/generated_images/feature_importances_thyroidDF_before_cleaning.png', bbox_inches="tight")
+        # plt.clf()
+        # plt.cla()
+        pass
 
     remove_dominant_attributes_list = remove_dominant_attributes(pd.concat([x_train, y_train], axis='columns'), columns)
     thyroidDataset.drop(remove_dominant_attributes_list, axis=1, inplace=True)
@@ -490,19 +561,34 @@ def mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evalua
     x_test.drop(remove_dominant_attributes_list, axis=1, inplace=True)
     columns = columns.drop(remove_dominant_attributes_list)
 
-    if (evaluate == True):
+    # normalization of the data
+    x = x_train.values  # returns a numpy array
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x_scaled = min_max_scaler.fit_transform(x)
+    x_train = pd.DataFrame(x_scaled, columns=x_train.columns)
 
+    # normalization of the data
+    x = x_test.values  # returns a numpy array
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x_scaled = min_max_scaler.fit_transform(x)
+    x_test = pd.DataFrame(x_scaled, columns=x_train.columns)
+
+    # Generate list of 10 testing CSV files, where every CSV file contains dataframe with 22 columns and random number
+    # of rows from 100 to number of entries in thyroidDataset (19428) with randomly entries get from that dataset
+    listOfDatasets = generate_testing_random_datasets(thyroidDataset)
+
+    print('Dataset dimensions AFTER pretprocessing')
+    print('Dataset number of rows: ', len(thyroidDataset))
+    print('Dataset number of columns: ', len(thyroidDataset.columns))
+
+    if (evaluate == True):
         thyroidDataset['target'] = [int(x) for x in thyroidDataset['target']]
         thyroidDataset['sex'] = [int(x) for x in thyroidDataset['sex']]
 
-        thyroidDataset.hist(figsize=(20,20), xrot=-45)
+        thyroidDataset.hist(figsize=(20, 20), xrot=-45)
         plt.savefig('thyroid_project/resources/generated_images/attributes_distribution_thyroidDF_after_cleaning.png')
         plt.clf()
         plt.cla()
-
-        # Generate list of 10 testing CSV files, where every CSV file contains dataframe with 22 columns and random number
-        # of rows from 100 to number of entries in thyroidDataset (19428) with randomly entries get from that dataset
-        listOfDatasets = generate_testing_random_datasets(thyroidDataset)
 
         # Checking importance of each feature in DS
         reg = LassoCV()
@@ -512,49 +598,53 @@ def mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evalua
         # Correlation matrix for get information about weak, positive, negative correlations in DS for features
         plt.figure(figsize=(18, 16))
         cor = thyroidDataset.corr()
-        print(cor.iloc[-1:]) #dataframe with last target row
+        print(cor.iloc[-1:])  # dataframe with last target row
         sns.heatmap(cor, annot=True, cmap=plt.cm.Reds)
         plt.title('Correlation matrix AFTER cleanining dominant attributes')
         plt.savefig('thyroid_project/resources/generated_images/correlation_matrix_thyroidDF_after_cleaning.png')
-        #plt.show()
+        # plt.show()
         plt.clf()
         plt.cla()
 
-        clf = RandomForestClassifier(n_estimators = 100,
-                                     bootstrap=True,
-                                     max_depth=None,
-                                     n_jobs=-1,
-                                     min_samples_leaf=10,
-                                     min_samples_split=2,
-                                     random_state=123)
-        clf.fit(x_train, y_train)
-        coef = clf.feature_importances_
-        ind = np.argsort(-coef)
-        xtmp = range(x_train.shape[1])
-        ytmp = coef[ind][:x_train.shape[1]]
-        plt.title("Feature importances AFTER cleaning")
-        ax = plt.subplot()
-        plt.barh(xtmp, ytmp, color='red')
-        ax.set_yticks(xtmp)
-        ax.set_yticklabels(columns[ind])
-        plt.gca().invert_yaxis()
-        plt.savefig('thyroid_project/resources/generated_images/feature_importances_thyroidDF_after_cleaning.png')
-        plt.clf()
-        plt.cla()
+        # clf = RandomForestClassifier(n_estimators=100,
+        #                              bootstrap=True,
+        #                              max_depth=None,
+        #                              n_jobs=-1,
+        #                              min_samples_leaf=10,
+        #                              min_samples_split=2,
+        #                              random_state=123)
+        # clf.fit(x_train, y_train)
+        # coef = clf.feature_importances_
+        # ind = np.argsort(-coef)
+        # xtmp = range(x_train.shape[1])
+        # ytmp = coef[ind][:x_train.shape[1]]
+        # plt.title("Feature importances AFTER cleaning")
+        # ax = plt.subplot()
+        # plt.barh(xtmp, ytmp, color='red')
+        # ax.set_yticks(xtmp)
+        # ax.set_yticklabels(columns[ind])
+        # plt.gca().invert_yaxis()
+        # plt.savefig('thyroid_project/resources/generated_images/feature_importances_thyroidDF_after_cleaning.png')
+        # plt.clf()
+        # plt.cla()
+
+        x_train.reset_index(drop=True, inplace=True)
+        y_train.reset_index(drop=True, inplace=True)
 
         evaluator2.evaluate(pd.concat([x_train, y_train], axis='columns'), columns)
 
     return thyroidDataset, columns, x_train, x_test, y_train, y_test
 
-thyroidDataset, columns, x_train, x_test, y_train, y_test = prepareThyroidDataset()
-thyroidDataset, columns, x_train, x_test, y_train, y_test = \
-    mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evaluate=False)
+
+#thyroidDataset, columns, x_train, x_test, y_train, y_test = prepareThyroidDataset()
+#thyroidDataset, columns, x_train, x_test, y_train, y_test = \
+#    mainMethod(thyroidDataset, columns, x_train, x_test, y_train, y_test, evaluate=False)
 
 ########################################################################################################################
 ######################################################  PREDICTION  ####################################################
 
-datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score, sensitivity = \
-     predictDataWithMetrics('thyroidDF', 'naive_bayes_classifier_algorithm', columns, x_train, y_train, x_test, y_test)
+#datasetWithPrediction, columns, accuracy_metric, precision, recall, f1score, sensitivity = \
+#    predictDataWithMetrics('thyroidDF', 'random_forest_algorithm', columns, x_train, y_train, x_test, y_test)
 
 ########################################################################################################################
 ########################################################################################################################
